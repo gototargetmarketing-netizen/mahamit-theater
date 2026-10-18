@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAHAMIT THEATER - จองตั๋วภาพยนตร์</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Prompt & Kanit for classic modern feel -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            dark: '#0f0f10',
+                            card: '#18181b',
+                            red: '#8b1528',
+                            redHover: '#a31a31',
+                            gold: '#d4af37',
+                            cream: '#f4f1ea',
+                            gray: '#27272a',
+                            lightGray: '#a1a1aa'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Prompt', 'sans-serif'],
+                        classic: ['Playfair Display', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f0f10;
+            color: #f4f1ea;
+            font-family: 'Prompt', sans-serif;
+        }
+        .screen-curve {
+            height: 18px;
+            width: 100%;
+            border-top: 4px solid #d4af37;
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+            box-shadow: 0 -10px 25px rgba(212, 175, 55, 0.3);
+        }
+        .seat {
+            transition: all 0.2s ease;
+        }
+        .seat.available {
+            background-color: #27272a;
+            border: 1px solid #3f3f46;
+            color: #a1a1aa;
+        }
+        .seat.available:hover {
+            background-color: #8b1528;
+            border-color: #8b1528;
+            color: #ffffff;
+            transform: scale(1.08);
+        }
+        .seat.selected {
+            background-color: #8b1528;
+            border: 2px solid #d4af37;
+            color: #ffffff;
+            box-shadow: 0 0 10px rgba(139, 21, 40, 0.8);
+            transform: scale(1.05);
+        }
+        .seat.booked {
+            background-color: #18181b;
+            border: 1px dashed #3f3f46;
+            color: #45454a;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        /* Vintage badge styling */
+        .vintage-border {
+            border: 2px solid #8b1528;
+            position: relative;
+        }
+        .vintage-border::before {
+            content: '';
+            position: absolute;
+            top: 2px; left: 2px; right: 2px; bottom: 2px;
+            border: 1px solid #d4af37;
+            pointer-events: none;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f0f10;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8b1528;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-brand-red selection:text-white">
+
+    <!-- HEADER / NAVIGATION -->
+    <header class="bg-brand-dark border-b border-brand-red/30 sticky top-0 z-50 backdrop-blur-md bg-opacity-95">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+            <!-- Brand Logo Frame -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="resetToHome()">
+                <div class="bg-black border border-brand-gold/40 p-2 rounded flex items-center justify-center shadow-lg">
+                    <div class="text-center">
+                        <div class="text-xs tracking-widest text-brand-cream font-bold leading-tight">เกรียงไกร</div>
+                        <div class="bg-brand-red px-2 py-0.5 rounded-sm text-[11px] text-white font-semibold my-0.5 shadow-inner">
+                            มาหามิตร
+                        </div>
+                        <div class="text-[8px] text-brand-gold uppercase tracking-tighter">Maerim Neighborhood Mall</div>
+                    </div>
+                </div>
+                <div class="hidden sm:block">
+                    <h1 class="text-xl font-bold tracking-wider text-white font-classic uppercase">MAHAMIT <span class="text-brand-gold">THEATER</span></h1>
+                    <p class="text-xs text-brand-lightGray tracking-widest">CLASSIC & MODERN CINEMA EXPERIENCE</p>
+                </div>
+            </div>
+
+            <!-- Header Menu / Actions -->
+            <div class="flex items-center space-x-4">
+                <button onclick="openSettingsModal()" class="text-brand-lightGray hover:text-brand-gold transition px-3 py-1.5 text-xs sm:text-sm rounded border border-zinc-800 hover:border-brand-gold/40 flex items-center space-x-2">
+                    <i class="fa-solid fa-gear"></i>
+                    <span class="hidden md:inline">ตั้งค่า Google Sheet</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+        
+        <!-- STEP INDICATOR -->
+        <div id="step-indicator" class="mb-8 max-w-3xl mx-auto">
+            <div class="flex items-center justify-between text-xs sm:text-sm text-brand-lightGray">
+                <div class="flex flex-col items-center step-item active" id="step-1-indicator">
+                    <div class="w-8 h-8 rounded-full bg-brand-red text-white flex items-center justify-center font-bold mb-1 shadow-md border border-brand-gold/50">1</div>
+                    <span class="text-brand-gold font-medium">เลือกภาพยนตร์</span>
+                </div>
+                <div class="h-0.5 flex-1 bg-zinc-800 mx-2" id="line-1"></div>
+                <div class="flex flex-col items-center step-item" id="step-2-indicator">
+                    <div class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-500 flex items-center justify-center font-bold mb-1 border border-zinc-700">2</div>
+                    <span>เลือกรอบ & ที่นั่ง</span>
+                </div>
+                <div class="h-0.5 flex-1 bg-zinc-800 mx-2" id="line-2"></div>
+                <div class="flex flex-col items-center step-item" id="step-3-indicator">
+                    <div class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-500 flex items-center justify-center font-bold mb-1 border border-zinc-700">3</div>
+                    <span>กรอกข้อมูล & ชำระเงิน</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 1: MOVIE SELECTION -->
+        <section id="step-1" class="space-y-6">
+            <div class="text-center max-w-2xl mx-auto mb-8">
+                <h2 class="text-2xl sm:text-3xl font-bold text-white font-classic tracking-wide">NOW SHOWING</h2>
+                <div class="h-1 w-24 bg-brand-red mx-auto my-2 rounded-full"></div>
+                <p class="text-brand-lightGray text-sm">เลือกชมภาพยนตร์สุดคลาสสิกและไฮไลต์ประจำสัปดาห์ ณ โรงภาพยนตร์เกรียงไกร มาหามิตร</p>
+            </div>
+
+            <!-- Movie Grid (5 Movies) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6" id="movie-grid">
+                <!-- Dynamically Inserted Movies via JS -->
+            </div>
+        </section>
+
+        <!-- STEP 2: SHOWTIME & SEAT SELECTION -->
+        <section id="step-2" class="hidden space-y-8">
+            <!-- Selected Movie Header Brief -->
+            <div class="bg-brand-card p-4 rounded-xl border border-zinc-800 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center space-x-4">
+                    <img id="selected-movie-img" src="" alt="Selected Movie" class="w-16 h-24 object-cover rounded shadow">
+                    <div>
+                        <span id="selected-movie-genre" class="text-xs bg-brand-red/30 text-brand-gold px-2 py-0.5 rounded border border-brand-red/50">Genre</span>
+                        <h3 id="selected-movie-title" class="text-xl font-bold text-white mt-1">Movie Title</h3>
+                        <p class="text-xs text-brand-lightGray mt-1"><i class="fa-regular fa-clock mr-1"></i> <span id="selected-movie-duration">120 นาที</span> | ราคาตั๋ว 160 บาท/ที่นั่ง</p>
+                    </div>
+                </div>
+                <button onclick="goToStep(1)" class="text-xs text-brand-lightGray hover:text-white bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition border border-zinc-700">
+                    <i class="fa-solid fa-arrow-left mr-1"></i> เปลี่ยนเรื่อง
+                </button>
+            </div>
+
+            <!-- Showtime Controls -->
+            <div class="bg-brand-card p-6 rounded-xl border border-zinc-800 space-y-4">
+                <h4 class="text-lg font-semibold text-brand-cream border-l-4 border-brand-red pl-3">1. เลือกลักษณะวัน และรอบเวลา 상영</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Date Input -->
+                    <div>
+                        <label class="block text-xs text-brand-lightGray mb-2 font-medium">วันที่ต้องการเข้าชม:</label>
+                        <input type="date" id="booking-date" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
+                        <p id="date-type-badge" class="text-xs mt-2 text-brand-gold font-medium"></p>
+                    </div>
+
+                    <!-- Time Slots -->
+                    <div>
+                        <label class="block text-xs text-brand-lightGray mb-2 font-medium">รอบเวลา 상영 ที่เปิดบริการ:</label>
+                        <div id="showtime-slots" class="flex flex-wrap gap-3">
+                            <!-- Slots generated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seat Selection Area -->
+            <div class="bg-brand-card p-6 sm:p-8 rounded-xl border border-zinc-800 text-center space-y-6">
+                <h4 class="text-lg font-semibold text-brand-cream border-l-4 border-brand-red pl-3 text-left">2. เลือกที่นั่งของคุณ (จำกัด 25 ที่นั่ง)</h4>
+
+                <!-- Screen Display -->
+                <div class="max-w-lg mx-auto my-4">
+                    <div class="screen-curve mb-2"></div>
+                    <p class="text-xs text-brand-lightGray uppercase tracking-widest font-mono">จอภาพยนตร์ (SCREEN)</p>
+                </div>
+
+                <!-- Seat Grid Container -->
+                <div class="inline-block bg-black/40 p-6 rounded-2xl border border-zinc-800/80 shadow-2xl overflow-x-auto max-w-full">
+                    <div id="seat-layout" class="flex flex-col gap-3 min-w-[280px]">
+                        <!-- Rows A, B, C, E, F dynamically generated -->
+                    </div>
+                </div>
+
+                <!-- Seat Legend -->
+                <div class="flex flex-wrap justify-center gap-6 text-xs text-brand-lightGray pt-2">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-5 h-5 rounded available border border-zinc-700"></div>
+                        <span>ว่าง (160 บาท)</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-5 h-5 rounded bg-brand-red border border-brand-gold"></div>
+                        <span>ที่คุณเลือก</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-5 h-5 rounded booked border border-zinc-800"></div>
+                        <span>ถูกจองแล้ว</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2 Footer Bar -->
+            <div class="bg-brand-card p-4 rounded-xl border border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4 sticky bottom-4 z-40 shadow-2xl">
+                <div>
+                    <span class="text-xs text-brand-lightGray block">ที่นั่งที่เลือก:</span>
+                    <span id="selected-seats-text" class="text-lg font-bold text-brand-gold">ยังไม่ได้เลือกที่นั่ง</span>
+                </div>
+                <div class="flex items-center space-x-4 w-full sm:w-auto justify-between sm:justify-end">
+                    <div>
+                        <span class="text-xs text-brand-lightGray block">ราคารวมทั้งสิ้น:</span>
+                        <span id="total-price-text" class="text-xl font-extrabold text-white">0 ฿</span>
+                    </div>
+                    <button id="btn-proceed-to-checkout" disabled onclick="goToStep(3)" class="bg-zinc-800 text-zinc-500 font-bold px-6 py-3 rounded-xl transition cursor-not-allowed">
+                        ถัดไป: กรอกข้อมูล <i class="fa-solid fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 3: CUSTOMER FORM & PAYMENT -->
+        <section id="step-3" class="hidden space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                <!-- Left Column: User Information & Payment Upload -->
+                <div class="lg:col-span-7 bg-brand-card p-6 sm:p-8 rounded-xl border border-zinc-800 space-y-6">
+                    <h3 class="text-xl font-bold text-white border-b border-zinc-800 pb-3 flex items-center">
+                        <i class="fa-solid fa-user-pen text-brand-gold mr-3"></i> ข้อมูลผู้จองภาพยนตร์
+                    </h3>
+
+                    <form id="booking-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-medium text-brand-lightGray mb-1">ชื่อ - นามสกุล <span class="text-brand-red">*</span></label>
+                                <input type="text" id="cust-name" required placeholder="นายเกรียงไกร มาหามิตร" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-brand-lightGray mb-1">อีเมล (สำหรับรับตั๋วเข้างาน) <span class="text-brand-red">*</span></label>
+                                <input type="email" id="cust-email" required placeholder="example@email.com" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-brand-lightGray mb-1">เบอร์โทรศัพท์ <span class="text-brand-red">*</span></label>
+                                <input type="tel" id="cust-phone" required placeholder="0812345678" pattern="[0-9]{9,10}" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
+                            </div>
+                        </div>
+
+                        <!-- Payment Section -->
+                        <div class="pt-6 border-t border-zinc-800">
+                            <h4 class="text-lg font-bold text-brand-cream mb-3 flex items-center">
+                                <i class="fa-solid fa-qrcode text-brand-gold mr-3"></i> สแกนชำระเงินผ่าน QR Code
+                            </h4>
+
+                            <div class="bg-zinc-900/90 p-5 rounded-xl border border-zinc-800 flex flex-col md:flex-row items-center gap-6">
+                                <!-- Generated Dynamic QR Code Placeholders -->
+                                <div class="bg-white p-3 rounded-xl shadow-lg text-center flex-shrink-0">
+                                    <img id="promptpay-qr" src="" alt="PromptPay QR Code" class="w-40 h-40 object-contain">
+                                    <p class="text-[10px] text-zinc-600 font-mono mt-1">MAHAMIT THEATER OFFICIAL</p>
+                                </div>
+                                <div class="space-y-2 text-sm text-center md:text-left">
+                                    <p class="text-xs text-brand-lightGray">กรุณาใช้แอปธนาคารสแกน QR Code ด้านซ้ายมือเพื่อโอนเงินยอด:</p>
+                                    <p id="qr-amount" class="text-2xl font-bold text-brand-gold">0 ฿</p>
+                                    <div class="text-xs bg-zinc-800/80 p-2.5 rounded border border-zinc-700 text-zinc-300 space-y-1">
+                                        <p><i class="fa-solid fa-building-columns text-brand-gold mr-1"></i> ธนาคาร: กสิกรไทย (K-Bank)</p>
+                                        <p><i class="fa-solid fa-user text-brand-gold mr-1"></i> ชื่อบัญชี: บริษัท เกรียงไกร มาหามิตร จำกัด</p>
+                                        <p><i class="fa-solid fa-hashtag text-brand-gold mr-1"></i> เลขบัญชี: 098-1-23456-7</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Payment Date & Time Auto Inputs -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-brand-lightGray mb-1">วันที่ชำระเงิน (ขึ้นอัตโนมัติ) <span class="text-brand-red">*</span></label>
+                                    <input type="date" id="pay-date" required readonly class="w-full bg-zinc-950 border border-zinc-800 text-brand-gold font-medium rounded-lg p-3 cursor-not-allowed">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-brand-lightGray mb-1">เวลาที่ชำระเงินโดยประมาณ <span class="text-brand-red">*</span></label>
+                                    <input type="time" id="pay-time" required class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 flex items-center justify-between gap-4">
+                            <button type="button" onclick="goToStep(2)" class="text-sm text-brand-lightGray hover:text-white px-4 py-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition">
+                                <i class="fa-solid fa-arrow-left mr-1"></i> ย้อนกลับ
+                            </button>
+                            <button type="submit" id="btn-submit-booking" class="flex-1 bg-brand-red hover:bg-brand-redHover text-white font-bold py-3.5 px-6 rounded-xl transition shadow-lg border border-brand-gold/40 flex items-center justify-center">
+                                <i class="fa-solid fa-paper-plane mr-2"></i> ยืนยันการจองตั๋วภาพยนตร์
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Right Column: Booking Summary Ticket Style -->
+                <div class="lg:col-span-5">
+                    <div class="bg-zinc-900 rounded-2xl border-2 border-brand-red/50 overflow-hidden shadow-2xl relative">
+                        <!-- Top Decorative Header -->
+                        <div class="bg-brand-red px-6 py-4 border-b border-brand-gold/40 flex justify-between items-center">
+                            <span class="text-xs font-bold uppercase tracking-widest text-brand-gold">BOOKING SUMMARY</span>
+                            <span class="text-xs text-white font-mono" id="ticket-id-preview">#MT-8890</span>
+                        </div>
+
+                        <div class="p-6 space-y-6">
+                            <div class="flex space-x-4 items-center">
+                                <img id="summary-movie-img" src="" class="w-20 h-28 object-cover rounded shadow-md border border-zinc-700">
+                                <div>
+                                    <h4 id="summary-movie-title" class="text-lg font-bold text-white leading-snug">Movie Title</h4>
+                                    <p class="text-xs text-brand-gold mt-1" id="summary-movie-genre">Genre</p>
+                                    <p class="text-xs text-brand-lightGray mt-2"><i class="fa-regular fa-clock mr-1"></i> <span id="summary-movie-duration">120 นาที</span></p>
+                                </div>
+                            </div>
+
+                            <div class="border-t border-b border-zinc-800 py-4 space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-brand-lightGray">โรงภาพยนตร์:</span>
+                                    <span class="text-white font-medium">MAHAMIT THEATER (Hall 1)</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-brand-lightGray">วันที่ฉาย:</span>
+                                    <span class="text-brand-gold font-medium" id="summary-date">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-brand-lightGray">รอบเวลา:</span>
+                                    <span class="text-white font-medium" id="summary-time">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-brand-lightGray">ที่นั่งที่เลือก:</span>
+                                    <span class="text-brand-gold font-bold" id="summary-seats">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-brand-lightGray">จำนวน:</span>
+                                    <span class="text-white font-medium" id="summary-count">0 ที่นั่ง</span>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between items-center text-lg font-bold">
+                                <span class="text-white">ยอดชำระสุทธิ:</span>
+                                <span class="text-2xl text-brand-gold" id="summary-total-price">0 ฿</span>
+                            </div>
+
+                            <div class="bg-brand-card p-3 rounded-lg border border-zinc-800 text-[11px] text-brand-lightGray space-y-1">
+                                <p class="text-brand-gold font-semibold"><i class="fa-solid fa-circle-info mr-1"></i> ข้อกำหนดสำคัญ:</p>
+                                <p>• หลังจากกด ยืนยันการจอง แล้ว ระบบจะส่งข้อมูลให้แอดมินตรวจสอบ</p>
+                                <p>• ทางแอดมินจะตรวจสอบการโอนเงิน และจัดส่ง QR Code เข้างานให้ท่านผ่านทางอีเมลอีกครั้ง</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SUCCESS MODAL / CONFIRMATION SCREEN -->
+        <section id="step-4" class="hidden max-w-2xl mx-auto">
+            <div class="bg-brand-card rounded-2xl border-2 border-brand-gold/60 p-8 text-center space-y-6 shadow-2xl relative overflow-hidden">
+                <div class="w-20 h-20 bg-emerald-950/80 text-emerald-400 border-2 border-emerald-500 rounded-full flex items-center justify-center mx-auto text-3xl shadow-lg">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+
+                <div class="space-y-2">
+                    <h2 class="text-2xl sm:text-3xl font-bold text-white font-classic">ส่งข้อมูลการจองสำเร็จแล้ว!</h2>
+                    <p class="text-brand-gold font-medium text-sm">เลขที่รายการสั่งซื้อ: <span id="confirmed-booking-id" class="font-mono underline">#MT-0000</span></p>
+                </div>
+
+                <div class="bg-zinc-900/90 p-6 rounded-xl border border-zinc-800 text-left text-sm space-y-3">
+                    <div class="flex items-start space-x-3 text-amber-300 bg-amber-950/30 p-3 rounded border border-amber-800/50">
+                        <i class="fa-solid fa-envelope-circle-check text-xl mt-0.5"></i>
+                        <div>
+                            <p class="font-bold text-xs uppercase tracking-wider">ระบบกำลังรอการตรวจสอบจากแอดมิน</p>
+                            <p class="text-xs text-amber-200/80 mt-0.5">ระบบได้รับข้อมูลและสลิปรายละเอียดของท่านแล้ว แอดมินจะทำการตรวจสอบยอดเงิน จากนั้นจะจัดส่ง **QR Code สำหรับเข้างาน** ให้ท่านผ่านทางอีเมล <span id="confirmed-email" class="text-white font-semibold"></span> โดยเร็วที่สุด</p>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 text-xs text-brand-lightGray space-y-1 font-mono">
+                        <p><strong class="text-white font-sans">ภาพยนตร์:</strong> <span id="confirmed-movie"></span></p>
+                        <p><strong class="text-white font-sans">วันที่ & รอบฉาย:</strong> <span id="confirmed-datetime"></span></p>
+                        <p><strong class="text-white font-sans">ที่นั่ง:</strong> <span id="confirmed-seats" class="text-brand-gold font-bold"></span></p>
+                        <p><strong class="text-white font-sans">ยอดชำระ:</strong> <span id="confirmed-amount"></span></p>
+                    </div>
+                </div>
+
+                <div class="pt-4 flex flex-col sm:flex-row justify-center gap-4">
+                    <button onclick="resetToHome()" class="bg-brand-red hover:bg-brand-redHover text-white px-8 py-3 rounded-xl transition font-bold border border-brand-gold/40">
+                        กลับสู่หน้าหลัก / จองเพิ่ม
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- SETTINGS MODAL (FOR GOOGLE SHEETS WEB APP URL) -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-brand-card max-w-lg w-full rounded-2xl border border-zinc-700 p-6 space-y-5">
+            <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center">
+                    <i class="fa-solid fa-file-csv text-emerald-500 mr-2"></i> ตั้งค่าเชื่อมต่อ Google Sheet
+                </h3>
+                <button onclick="closeSettingsModal()" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+
+            <div class="space-y-3 text-xs text-brand-lightGray">
+                <p>ใส่นำ Web App URL ที่ได้จาก **Google Apps Script** เพื่อส่งข้อมูลการจองบันทึกลงใน Google Sheet ของคุณโดยตรง:</p>
+                <input type="url" id="gsheet-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-gold font-mono">
+                
+                <div class="bg-zinc-900 p-3 rounded border border-zinc-800 space-y-1">
+                    <p class="text-brand-gold font-bold">💡 โค้ด Google Apps Script (ย่อ):</p>
+                    <pre class="text-[10px] text-zinc-400 overflow-x-auto p-2 bg-black rounded font-mono">
+function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = JSON.parse(e.postData.contents);
+  sheet.appendRow([
+    data.bookingId, data.movieTitle, data.date, 
+    data.time, data.seats, data.totalPrice, 
+    data.customerName, data.customerEmail, 
+    data.customerPhone, data.payDate, data.payTime, "รออนุมัติ QR"
+  ]);
+  return ContentService.createTextOutput("Success");
+}</pre>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-2">
+                <button onclick="closeSettingsModal()" class="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-xs hover:bg-zinc-700">ยกเลิก</button>
+                <button onclick="saveSettings()" class="px-4 py-2 bg-brand-red text-white font-bold rounded-lg text-xs hover:bg-brand-redHover">บันทึก URL</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-black border-t border-zinc-900 py-6 text-center text-xs text-zinc-500 mt-12">
+        <div class="max-w-7xl mx-auto px-4 space-y-2">
+            <p>© 2026 MAHAMIT THEATER - เกรียงไกร มาหามิตร (Maerim Neighborhood Mall). All rights reserved.</p>
+            <p class="text-[11px] text-zinc-600">ระบบสำรองที่นั่งโรงภาพยนตร์มาตรฐานคลาสสิก | ออกแบบพัฒนาเพื่อประสบการณ์ที่ดีที่สุด</p>
+        </div>
+    </footer>
+
+    <script>
+        /* ----------------------------------------------------
+         * Application State & Data Setup
+         * ---------------------------------------------------- */
+        const MOVIES_DATA = [
+            {
+                id: 'm1',
+                title: 'มนต์รักเกรียงไกร (1975)',
+                genre: 'Classic / Romance / Musical',
+                duration: '135 นาที',
+                poster: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=600&q=80',
+                description: 'เรื่องราวความรักสุดซาบซึ้งใจกลางเมืองแม่ริม ในบรรยากาศโรงภาพยนตร์คลาสสิกยุค 70s'
+            },
+            {
+                id: 'm2',
+                title: 'สืบลับมาหามิตร (The Detective)',
+                genre: 'Action / Mystery / Thriller',
+                duration: '120 นาที',
+                poster: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=600&q=80',
+                description: 'การสืบสวนคดีปริศนาในคฤหาสน์เก่าแก่ บททดสอบมิตรภาพและความจริงที่ซ่อนอยู่'
+            },
+            {
+                id: 'm3',
+                title: 'ตำนานเกรียงไกร ชัยชนะ',
+                genre: 'Historical / Drama / Epic',
+                duration: '150 นาที',
+                poster: 'https://images.unsplash.com/photo-1518676599625-581d69d50a25?auto=format&fit=crop&w=600&q=80',
+                description: 'ภาพยนตร์อิงประวัติศาสตร์ทรงคุณค่า ถ่ายทอดความตั้งใจและพลังแห่งความมุ่งมั่น'
+            },
+            {
+                id: 'm4',
+                title: 'คืนเหงาที่แม่ริม (Midnight in Maerim)',
+                genre: 'Drama / Indie / Cinematic',
+                duration: '110 นาที',
+                poster: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=600&q=80',
+                description: 'ภาพยนตร์อินดี้ละมุนอารมณ์ สะท้อนชีวิตยามค่ำคืนและเสียงดนตรีแจ๊สอันไพเราะ'
+            },
+            {
+                id: 'm5',
+                title: 'มิตรแท้ตะลุยจักรวาล (Space Odyssey)',
+                genre: 'Sci-Fi / Adventure',
+                duration: '140 นาที',
+                poster: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80',
+                description: 'ท่องอวกาศสุดล้ำไปกับผองเพื่อน การเดินทางไร้ขีดจำกัดต้อนรับโลกอนาคต'
+            }
+        ];
+
+        // Seat Layout Specification: 25 seats total
+        // Rows: A, B, C, E, F (5 seats per row)
+        const SEAT_ROWS = ['A', 'B', 'C', 'E', 'F'];
+        const SEATS_PER_ROW = 5;
+        const TICKET_PRICE = 160; // 160 THB per seat
+
+        // In-memory state
+        let currentStep = 1;
+        let selectedMovie = null;
+        let selectedDate = '';
+        let selectedTime = '';
+        let selectedSeats = [];
+        let googleSheetUrl = localStorage.getItem('mahamit_gsheet_url') || '';
+
+        // Booked Database stored in LocalStorage to persist booked seats across refreshes
+        let bookingsDb = JSON.parse(localStorage.getItem('mahamit_bookings_db')) || [];
+
+        /* ----------------------------------------------------
+         * Initialization & Navigation
+         * ---------------------------------------------------- */
+        window.onload = function() {
+            renderMovies();
+            setupDefaultDates();
+            if (googleSheetUrl) {
+                document.getElementById('gsheet-url').value = googleSheetUrl;
+            }
+        };
+
+        function renderMovies() {
+            const container = document.getElementById('movie-grid');
+            container.innerHTML = MOVIES_DATA.map(movie => `
+                <div class="bg-brand-card rounded-xl border border-zinc-800 overflow-hidden hover:border-brand-red transition duration-300 flex flex-col justify-between group shadow-lg">
+                    <div class="relative overflow-hidden aspect-[2/3]">
+                        <img src="${movie.poster}" alt="${movie.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
+                        <span class="absolute top-3 right-3 bg-brand-red text-white text-[10px] font-bold px-2 py-1 rounded shadow border border-brand-gold/40">
+                            ${movie.duration}
+                        </span>
+                    </div>
+                    <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+                        <div>
+                            <span class="text-[10px] text-brand-gold font-medium uppercase tracking-wider block">${movie.genre}</span>
+                            <h3 class="text-base font-bold text-white mt-1 group-hover:text-brand-gold transition line-clamp-1">${movie.title}</h3>
+                            <p class="text-xs text-brand-lightGray mt-1 line-clamp-2">${movie.description}</p>
+                        </div>
+                        <button onclick="selectMovie('${movie.id}')" class="w-full bg-zinc-800 hover:bg-brand-red text-white font-semibold py-2.5 px-4 rounded-lg text-xs transition border border-zinc-700 hover:border-brand-gold flex items-center justify-center space-x-1">
+                            <i class="fa-solid fa-ticket"></i>
+                            <span>เลือกรอบ & จองที่นั่ง</span>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectMovie(movieId) {
+            selectedMovie = MOVIES_DATA.find(m => m.id === movieId);
+            selectedSeats = [];
+            
+            // Populate step 2 info
+            document.getElementById('selected-movie-img').src = selectedMovie.poster;
+            document.getElementById('selected-movie-title').innerText = selectedMovie.title;
+            document.getElementById('selected-movie-genre').innerText = selectedMovie.genre;
+            document.getElementById('selected-movie-duration').innerText = selectedMovie.duration;
+
+            // Update Summary Ticket preview right away
+            document.getElementById('summary-movie-img').src = selectedMovie.poster;
+            document.getElementById('summary-movie-title').innerText = selectedMovie.title;
+            document.getElementById('summary-movie-genre').innerText = selectedMovie.genre;
+            document.getElementById('summary-movie-duration').innerText = selectedMovie.duration;
+
+            goToStep(2);
+            updateShowtimesAndSeats();
+        }
+
+        function setupDefaultDates() {
+            const dateInput = document.getElementById('booking-date');
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.value = today;
+            selectedDate = today;
+
+            // Set auto payment date for step 3
+            document.getElementById('pay-date').value = today;
+
+            // Set default current time for payment time input
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('pay-time').value = `${hours}:${minutes}`;
+
+            dateInput.addEventListener('change', (e) => {
+                selectedDate = e.target.value;
+                document.getElementById('pay-date').value = selectedDate;
+                updateShowtimesAndSeats();
+            });
+        }
+
+        /* ----------------------------------------------------
+         * Date, Showtime & Seat Logic
+         * ---------------------------------------------------- */
+        function updateShowtimesAndSeats() {
+            if (!selectedDate) return;
+
+            const dateObj = new Date(selectedDate);
+            const dayOfWeek = dateObj.getDay(); // 0 = Sun, 6 = Sat, 1-5 = Mon-Fri
+            const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+
+            const badge = document.getElementById('date-type-badge');
+            const timeContainer = document.getElementById('showtime-slots');
+
+            let slots = [];
+            if (isWeekend) {
+                badge.innerText = '📅 วันเสาร์ - อาทิตย์ (เปิดบริการ 3 รอบ)';
+                slots = ['10:00', '14:00', '17:00'];
+            } else {
+                badge.innerText = '📅 วันธรรมดา จันทร์ - ศุกร์ (เปิดบริการ 2 รอบ)';
+                slots = ['10:00', '14:00'];
+            }
+
+            // Default select first available time slot if not selected or invalid
+            if (!slots.includes(selectedTime)) {
+                selectedTime = slots[0];
+            }
+
+            timeContainer.innerHTML = slots.map(time => `
+                <button type="button" onclick="selectTimeSlot('${time}')" class="px-5 py-2.5 rounded-xl font-bold text-sm transition border ${selectedTime === time ? 'bg-brand-red text-white border-brand-gold shadow-lg scale-105' : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-600'}">
+                    <i class="fa-regular fa-clock mr-1.5"></i> ${time} น.
+                </button>
+            `).join('');
+
+            renderSeatGrid();
+            updateSeatSummary();
+        }
+
+        function selectTimeSlot(time) {
+            selectedTime = time;
+            selectedSeats = []; // Reset selected seats when switching time
+            updateShowtimesAndSeats();
+        }
+
+        function getBookedSeatsForCurrentSlot() {
+            if (!selectedMovie || !selectedDate || !selectedTime) return [];
+            
+            // Filter database for matching movie + date + showtime
+            return bookingsDb
+                .filter(b => b.movieId === selectedMovie.id && b.date === selectedDate && b.time === selectedTime)
+                .flatMap(b => b.seats);
+        }
+
+        function renderSeatGrid() {
+            const layout = document.getElementById('seat-layout');
+            const bookedSeats = getBookedSeatsForCurrentSlot();
+
+            layout.innerHTML = SEAT_ROWS.map(row => {
+                let rowSeatsHTML = '';
+                for (let i = 1; i <= SEATS_PER_ROW; i++) {
+                    const seatId = `${row}${i}`;
+                    const isBooked = bookedSeats.includes(seatId);
+                    const isSelected = selectedSeats.includes(seatId);
+
+                    let seatClass = 'seat available';
+                    if (isBooked) seatClass = 'seat booked';
+                    else if (isSelected) seatClass = 'seat selected';
+
+                    rowSeatsHTML += `
+                        <button type="button" 
+                            ${isBooked ? 'disabled' : ''} 
+                            onclick="toggleSeat('${seatId}')"
+                            class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm ${seatClass}">
+                            ${seatId}
+                        </button>
+                    `;
+                }
+
+                return `
+                    <div class="flex items-center justify-center gap-2 sm:gap-3">
+                        <span class="w-6 text-xs text-brand-gold font-mono font-bold">${row}</span>
+                        <div class="flex gap-2 sm:gap-3">${rowSeatsHTML}</div>
+                        <span class="w-6 text-xs text-brand-gold font-mono font-bold">${row}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleSeat(seatId) {
+            if (selectedSeats.includes(seatId)) {
+                selectedSeats = selectedSeats.filter(s => s !== seatId);
+            } else {
+                selectedSeats.push(seatId);
+            }
+            renderSeatGrid();
+            updateSeatSummary();
+        }
+
+        function updateSeatSummary() {
+            const seatsText = selectedSeats.length > 0 ? selectedSeats.sort().join(', ') : 'ยังไม่ได้เลือกที่นั่ง';
+            const totalPrice = selectedSeats.length * TICKET_PRICE;
+
+            document.getElementById('selected-seats-text').innerText = seatsText;
+            document.getElementById('total-price-text').innerText = `${totalPrice.toLocaleString()} ฿`;
+
+            // Step 3 preview updates
+            document.getElementById('summary-date').innerText = selectedDate;
+            document.getElementById('summary-time').innerText = `${selectedTime} น.`;
+            document.getElementById('summary-seats').innerText = seatsText;
+            document.getElementById('summary-count').innerText = `${selectedSeats.length} ที่นั่ง`;
+            document.getElementById('summary-total-price').innerText = `${totalPrice.toLocaleString()} ฿`;
+            document.getElementById('qr-amount').innerText = `${totalPrice.toLocaleString()} ฿`;
+
+            // Dynamic PromptPay QR Code generator URL (using promptpay.io API / placeholder)
+            const promptPayNumber = "0981234567";
+            const qrUrl = `https://promptpay.io/${promptPayNumber}/${totalPrice}.png`;
+            document.getElementById('promptpay-qr').src = qrUrl;
+
+            // Button enable status
+            const btnProceed = document.getElementById('btn-proceed-to-checkout');
+            if (selectedSeats.length > 0) {
+                btnProceed.disabled = false;
+                btnProceed.className = "bg-brand-red hover:bg-brand-redHover text-white font-bold px-6 py-3 rounded-xl transition shadow-lg cursor-pointer border border-brand-gold/40";
+            } else {
+                btnProceed.disabled = true;
+                btnProceed.className = "bg-zinc-800 text-zinc-500 font-bold px-6 py-3 rounded-xl transition cursor-not-allowed";
+            }
+        }
+
+        /* ----------------------------------------------------
+         * Step Control & Navigation
+         * ---------------------------------------------------- */
+        function goToStep(step) {
+            currentStep = step;
+            
+            // Toggle visibility of step sections
+            document.getElementById('step-1').classList.toggle('hidden', step !== 1);
+            document.getElementById('step-2').classList.toggle('hidden', step !== 2);
+            document.getElementById('step-3').classList.toggle('hidden', step !== 3);
+            document.getElementById('step-4').classList.toggle('hidden', step !== 4);
+
+            // Update step indicators styling
+            for (let i = 1; i <= 3; i++) {
+                const el = document.getElementById(`step-${i}-indicator`);
+                if (!el) continue;
+                const circle = el.querySelector('div');
+                const label = el.querySelector('span');
+
+                if (i <= step) {
+                    circle.className = "w-8 h-8 rounded-full bg-brand-red text-white flex items-center justify-center font-bold mb-1 shadow-md border border-brand-gold/50";
+                    label.className = "text-brand-gold font-medium";
+                } else {
+                    circle.className = "w-8 h-8 rounded-full bg-zinc-800 text-zinc-500 flex items-center justify-center font-bold mb-1 border border-zinc-700";
+                    label.className = "text-zinc-500";
+                }
+            }
+
+            // Generate Booking ID preview on step 3
+            if (step === 3) {
+                const randomId = 'MT-' + Math.floor(1000 + Math.random() * 9000);
+                document.getElementById('ticket-id-preview').innerText = `#${randomId}`;
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetToHome() {
+            selectedMovie = null;
+            selectedSeats = [];
+            currentStep = 1;
+            goToStep(1);
+        }
+
+        /* ----------------------------------------------------
+         * Form Submission & Google Sheets Integration
+         * ---------------------------------------------------- */
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+
+            const submitBtn = document.getElementById('btn-submit-booking');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> กำลังส่งข้อมูล...`;
+
+            const bookingId = document.getElementById('ticket-id-preview').innerText;
+            const custName = document.getElementById('cust-name').value;
+            const custEmail = document.getElementById('cust-email').value;
+            const custPhone = document.getElementById('cust-phone').value;
+            const payDate = document.getElementById('pay-date').value;
+            const payTime = document.getElementById('pay-time').value;
+            const totalPrice = selectedSeats.length * TICKET_PRICE;
+
+            const bookingPayload = {
+                bookingId: bookingId,
+                movieId: selectedMovie.id,
+                movieTitle: selectedMovie.title,
+                date: selectedDate,
+                time: selectedTime,
+                seats: selectedSeats.sort(),
+                seatsText: selectedSeats.sort().join(', '),
+                totalPrice: totalPrice,
+                customerName: custName,
+                customerEmail: custEmail,
+                customerPhone: custPhone,
+                payDate: payDate,
+                payTime: payTime,
+                timestamp: new Date().toISOString()
+            };
+
+            // Save to internal storage (prevents double booking locally)
+            bookingsDb.push(bookingPayload);
+            localStorage.setItem('mahamit_bookings_db', JSON.stringify(bookingsDb));
+
+            // Optional: Send data to Google Sheet via Web App URL
+            if (googleSheetUrl) {
+                try {
+                    await fetch(googleSheetUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(bookingPayload)
+                    });
+                } catch (err) {
+                    console.warn('Google Sheet submission failed or no-cors:', err);
+                }
+            }
+
+            // Fill Confirmation Screen
+            document.getElementById('confirmed-booking-id').innerText = bookingId;
+            document.getElementById('confirmed-email').innerText = custEmail;
+            document.getElementById('confirmed-movie').innerText = selectedMovie.title;
+            document.getElementById('confirmed-datetime').innerText = `${selectedDate} เวลา ${selectedTime} น.`;
+            document.getElementById('confirmed-seats').innerText = selectedSeats.sort().join(', ');
+            document.getElementById('confirmed-amount').innerText = `${totalPrice.toLocaleString()} บาท`;
+
+            // Reset Form UI and Go to Success Step
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane mr-2"></i> ยืนยันการจองตั๋วภาพยนตร์`;
+
+            goToStep(4);
+        }
+
+        /* ----------------------------------------------------
+         * Settings Modal Functions
+         * ---------------------------------------------------- */
+        function openSettingsModal() {
+            document.getElementById('settings-modal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        function saveSettings() {
+            const url = document.getElementById('gsheet-url').value.trim();
+            googleSheetUrl = url;
+            localStorage.setItem('mahamit_gsheet_url', url);
+            closeSettingsModal();
+            alert('บันทึก Google Sheet Web App URL เรียบร้อยแล้ว!');
+        }
+    </script>
+</body>
+</html>
