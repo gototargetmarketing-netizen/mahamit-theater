@@ -258,37 +258,31 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between selection:bg-brand-red selection:text-white">
 
-    <!-- HEADER / NAVIGATION -->
-    <header class="bg-brand-dark border-b border-brand-red/30 sticky top-0 z-50 backdrop-blur-md bg-opacity-95">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
-
+  
 <!-- Brand Logo Frame -->
-<div class="flex items-center gap-3 sm:gap-4 cursor-pointer min-w-0"
-     onclick="resetToHome()">
-
- 
-<!-- Brand Logo Frame -->
-<div class="flex items-center gap-3 sm:gap-4 cursor-pointer min-w-0"
-     onclick="resetToHome()">
-
-    <!-- โลโก้ใหม่ -->
+<div
+    class="flex items-center gap-2 sm:gap-4 cursor-pointer min-w-0"
+    onclick="resetToHome()"
+>
+    <!-- โลโก้ภาษาไทย -->
     <img
         src="./logo.png"
-        alt="เกรียงไกร มาหามิตร"
-        class="w-24 sm:w-28 md:w-32 h-auto object-contain flex-shrink-0"
+        alt="เกรียงไกร มหามิตร"
+        class="w-20 sm:w-28 md:w-32 h-auto object-contain flex-shrink-0"
     >
 
-    <!-- ชื่อโรงภาพยนตร์ -->
-    <div class="hidden sm:block min-w-0">
-        <h1 class="text-xl md:text-2xl font-bold tracking-wider text-white font-classic uppercase">
+    <!-- ชื่อโรงภาพยนตร์: แสดงทั้งมือถือและคอม -->
+    <div class="block min-w-0 flex-1">
+        <h1 class="text-[13px] sm:text-xl md:text-2xl font-bold tracking-wide sm:tracking-wider text-white font-classic uppercase whitespace-nowrap">
             MAHAMIT <span class="text-brand-gold">THEATER</span>
         </h1>
-        <p class="text-xs md:text-sm text-brand-lightGray tracking-widest">
+
+        <p class="text-[6px] sm:text-xs md:text-sm text-brand-lightGray tracking-[0.08em] sm:tracking-widest whitespace-nowrap">
             CLASSIC &amp; MODERN CINEMA EXPERIENCE
         </p>
     </div>
-
 </div>
+
 
             <!-- Header Menu / Actions -->
             <div class="flex items-center space-x-4" aria-hidden="true"></div>
