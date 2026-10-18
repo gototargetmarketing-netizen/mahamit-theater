@@ -102,6 +102,158 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #8b1528;
         }
+
+
+
+
+/* Booking Loading Modal */
+.booking-loading-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(12, 13, 12, 0.76);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+
+.booking-loading-modal.is-visible {
+  display: flex;
+}
+
+.booking-loading-card {
+  box-sizing: border-box;
+  width: min(100%, 446px);
+  padding: 42px 28px 30px;
+  border: 2px solid #d7ad45;
+  border-radius: 27px;
+  background: #f7f5ef;
+  color: #46652c;
+  text-align: center;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, .28);
+  animation: bookingCardIn .28s ease-out;
+}
+
+.booking-loading-logo {
+  display: block;
+  width: auto;
+  max-width: 145px;
+  max-height: 90px;
+  object-fit: contain;
+  margin: 0 auto 34px;
+}
+
+.booking-loading-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 82px;
+  height: 82px;
+  margin: 0 auto 20px;
+  border: 2px solid #d7ad45;
+  border-radius: 50%;
+  background: #edf2df;
+  color: #46652c;
+  animation: bookingPulse 1.5s ease-in-out infinite;
+}
+
+.booking-loading-icon svg {
+  width: 42px;
+  height: 42px;
+}
+
+.booking-loading-card h2 {
+  margin: 0 0 12px;
+  font-size: clamp(19px, 4.5vw, 25px);
+  line-height: 1.5;
+  font-weight: 800;
+}
+
+.booking-loading-card p {
+  margin: 6px 0;
+  color: #777268;
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.booking-loading-card #bookingLoadingHint {
+  margin-top: 8px;
+}
+
+.booking-loading-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 23px;
+}
+
+.booking-loading-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #97313b;
+  animation: bookingDot 1.1s infinite ease-in-out;
+}
+
+.booking-loading-dots span:nth-child(2) {
+  animation-delay: .15s;
+}
+
+.booking-loading-dots span:nth-child(3) {
+  animation-delay: .3s;
+}
+
+@keyframes bookingPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+@keyframes bookingDot {
+  0%, 60%, 100% {
+    opacity: .4;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes bookingCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 480px) {
+  .booking-loading-card {
+    padding: 34px 22px 27px;
+    border-radius: 24px;
+  }
+
+  .booking-loading-logo {
+    margin-bottom: 28px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .booking-loading-card,
+  .booking-loading-icon,
+  .booking-loading-dots span {
+    animation: none;
+  }
+}
+
+
+        
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between selection:bg-brand-red selection:text-white">
@@ -967,6 +1119,77 @@
             }
         }
 
+
+function showBookingLoading() {
+  const modal = document.getElementById('bookingLoadingModal');
+  if (!modal) return;
+
+  document.getElementById('bookingLoadingTitle').textContent =
+    'กำลังทำการจองที่นั่งให้คุณ';
+
+  document.getElementById('bookingLoadingMessage').textContent =
+    'ระบบกำลังตรวจสอบและยืนยันที่นั่งของคุณ';
+
+  document.getElementById('bookingLoadingHint').innerHTML =
+    'อาจใช้เวลาประมาณ 10–30 วินาที<br>' +
+    'กรุณาอย่าปิดหรือรีเฟรชหน้านี้';
+
+  modal.classList.add('is-visible');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function hideBookingLoading() {
+  const modal = document.getElementById('bookingLoadingModal');
+  if (!modal) return;
+
+  modal.classList.remove('is-visible');
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+
+        
     </script>
+
+
+
+<!-- Booking Loading Modal -->
+<div id="bookingLoadingModal" class="booking-loading-modal"
+     role="status" aria-live="polite" aria-hidden="true">
+  <div class="booking-loading-card">
+    <!-- เปลี่ยน src ให้เป็น URL โลโก้เดิมของเว็บไซต์ -->
+    <img class="booking-loading-logo"
+         src="ใส่_URL_โลโก้เดิมของเว็บไซต์"
+         alt="MAHAMIT THEATER">
+
+    <div class="booking-loading-icon">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M8 25 L19 36 L40 12"
+          fill="none" stroke="currentColor"
+          stroke-width="6" stroke-linecap="round"
+          stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <h2 id="bookingLoadingTitle">
+      กำลังทำการจองที่นั่งให้คุณ
+    </h2>
+
+    <p id="bookingLoadingMessage">
+      ระบบกำลังตรวจสอบและยืนยันที่นั่งของคุณ
+    </p>
+    <p id="bookingLoadingHint">
+      อาจใช้เวลาประมาณ 10–30 วินาที<br>
+      กรุณาอย่าปิดหรือรีเฟรชหน้านี้
+    </p>
+
+    <div class="booking-loading-dots" aria-hidden="true">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</div>
+
+    
 </body>
 </html>
