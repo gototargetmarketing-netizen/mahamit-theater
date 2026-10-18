@@ -333,6 +333,34 @@
     gap: 14px;
   }
 
+
+
+#movieIntro .intro-logo-wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  margin: 0 0 4px;
+}
+
+#movieIntro .intro-logo {
+  display: block;
+  width: min(100%, 320px);
+  height: auto;
+  max-height: 90px;
+  object-fit: contain;
+}
+
+@media (max-width: 600px) {
+  #movieIntro .intro-logo {
+    width: min(78%, 260px);
+    max-height: 68px;
+  }
+}
+
+
+    
   #movieIntro .intro-close {
     position: absolute;
     right: 0;
@@ -448,11 +476,11 @@
       padding: 12px;
     }
 
-    #movieIntro .intro-panel {
-      width: 100%;
-      height: 88dvh;
-      gap: 12px;
-    }
+#movieIntro .intro-panel {
+  width: 100%;
+  height: 94dvh;
+  gap: 8px;
+}
 
     #movieIntro .intro-close {
       right: 2px;
@@ -484,6 +512,16 @@
             type="button"
             aria-label="ปิดหน้าสไลด์">×</button>
 
+
+<div class="intro-logo-wrap">
+  <img
+    class="intro-logo"
+    src="./logo.png"
+    alt="MAHAMIT Theater Logo"
+  >
+</div>
+
+      
     <p class="intro-heading">MAHAMIT THEATER</p>
 
     <div class="intro-poster-wrap">
