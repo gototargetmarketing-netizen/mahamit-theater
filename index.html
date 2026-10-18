@@ -298,6 +298,7 @@
 <body class="min-h-screen flex flex-col justify-between selection:bg-brand-red selection:text-white">
 
 
+
 <!-- MAHAMIT THEATER - MOVIE POSTER INTRO -->
 <style>
   #movieIntro {
@@ -466,11 +467,6 @@
       padding-top: 8px;
     }
 
-    #movieIntro .intro-poster {
-      max-width: 100%;
-      max-height: 100%;
-    }
-
     #movieIntro .intro-thumb {
       width: 48px;
       height: 64px;
@@ -481,9 +477,12 @@
 <div id="movieIntro" role="dialog"
      aria-label="โปสเตอร์ภาพยนตร์"
      aria-modal="true">
+
   <div class="intro-panel">
+
     <button class="intro-close" id="introClose"
-            type="button" aria-label="ปิดหน้าสไลด์">×</button>
+            type="button"
+            aria-label="ปิดหน้าสไลด์">×</button>
 
     <p class="intro-heading">MAHAMIT THEATER</p>
 
@@ -495,33 +494,45 @@
     </div>
 
     <p class="intro-caption" id="introCaption">
-      NOW SHOWING
+      AVENGERS: ENDGAME
     </p>
 
     <div class="intro-thumbnails">
-      <button class="intro-thumb active" type="button"
-              data-slide="0" aria-label="เลือก Avengers Endgame"
+
+      <button class="intro-thumb active"
+              type="button"
+              data-slide="0"
+              aria-label="เลือก Avengers Endgame"
               aria-pressed="true">
-        <img src="./teaser.png" alt="">
+        <img src="./teaser.png"
+             alt="Avengers Endgame">
       </button>
 
-      <button class="intro-thumb" type="button"
-              data-slide="1" aria-label="เลือก Friend Zone"
+      <button class="intro-thumb"
+              type="button"
+              data-slide="1"
+              aria-label="เลือก Friend Zone"
               aria-pressed="false">
-        <img src="./teaser2.jpg" alt="">
+        <img src="./teaser2.png"
+             alt="Friend Zone">
       </button>
+
     </div>
 
-    <div class="intro-progress">
-      <div class="intro-progress-fill" id="introProgress"></div>
+    <div class="intro-progress" aria-hidden="true">
+      <div class="intro-progress-fill"
+           id="introProgress"></div>
     </div>
+
   </div>
 </div>
 
 <script>
 (function () {
   const intro = document.getElementById('movieIntro');
-  if (!intro) return;
+  if (!intro || intro.dataset.initialized === 'true') return;
+
+  intro.dataset.initialized = 'true';
 
   const poster = document.getElementById('introPoster');
   const caption = document.getElementById('introCaption');
@@ -533,12 +544,12 @@
 
   const slides = [
     {
-      src: './poster-avengers.jpg',
+      src: './teaser.png',
       alt: 'Avengers Endgame',
       caption: 'AVENGERS: ENDGAME'
     },
     {
-      src: './teaser2.jpg',
+      src: './teaser2.png',
       alt: 'Friend Zone',
       caption: 'FRIEND ZONE'
     }
@@ -547,13 +558,19 @@
   let current = 0;
   let timer = null;
   let closed = false;
+  let transitionTimer = null;
 
   function showSlide(index) {
+    if (closed) return;
+
     current = index;
     poster.style.opacity = '0';
 
-    window.setTimeout(function () {
+    clearTimeout(transitionTimer);
+
+    transitionTimer = setTimeout(function () {
       if (closed) return;
+
       poster.src = slides[current].src;
       poster.alt = slides[current].alt;
       caption.textContent = slides[current].caption;
@@ -573,14 +590,18 @@
     progress.classList.add('running');
 
     clearTimeout(timer);
+
     timer = setTimeout(function () {
       showSlide((current + 1) % slides.length);
     }, 3000);
   }
 
   function closeIntro() {
+    if (closed) return;
+
     closed = true;
     clearTimeout(timer);
+    clearTimeout(transitionTimer);
     intro.classList.add('intro-hidden');
     document.body.style.overflow = '';
   }
@@ -593,17 +614,29 @@
 
   closeBtn.addEventListener('click', closeIntro);
 
-  document.addEventListener('keydown', function (event) {
+  function handleKeydown(event) {
     if (!closed && event.key === 'Escape') {
       closeIntro();
     }
-  });
+  }
+
+  document.addEventListener('keydown', handleKeydown);
 
   document.body.style.overflow = 'hidden';
+
+  poster.addEventListener('error', function () {
+    poster.style.opacity = '1';
+    caption.textContent =
+      'ไม่พบไฟล์ภาพ กรุณาตรวจสอบชื่อไฟล์ใน GitHub';
+    clearTimeout(timer);
+    progress.classList.remove('running');
+  });
+
   showSlide(0);
 })();
 </script>
 <!-- END MOVIE POSTER INTRO -->
+
 
 
     
