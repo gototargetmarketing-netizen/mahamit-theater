@@ -1046,6 +1046,7 @@
 
         async function handleFormSubmit(event) {
             event.preventDefault();
+            showBookingLoading();
 
             const submitBtn = document.getElementById('btn-submit-booking');
             const originalButtonHtml = '<i class="fa-solid fa-paper-plane mr-2"></i> ยืนยันการจองตั๋วภาพยนตร์';
@@ -1110,9 +1111,11 @@
                 document.getElementById('confirmed-amount').innerText = `${totalPrice.toLocaleString()} บาท`;
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalButtonHtml;
+                hideBookingLoading();
                 goToStep(4);
             } catch (error) {
                 console.error('Booking/Drive upload error:', error);
+                hideBookingLoading();
                 alert('บันทึกการจองไม่สำเร็จ: ' + (error.message || 'กรุณาตรวจสอบการเชื่อมต่อแล้วลองใหม่'));
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalButtonHtml;
@@ -1160,7 +1163,7 @@ function hideBookingLoading() {
   <div class="booking-loading-card">
     <!-- เปลี่ยน src ให้เป็น URL โลโก้เดิมของเว็บไซต์ -->
     <img class="booking-loading-logo"
-         src="ใส่_URL_โลโก้เดิมของเว็บไซต์"
+         src="./logo.png"
          alt="MAHAMIT THEATER">
 
     <div class="booking-loading-icon">
