@@ -254,36 +254,6 @@
 
 
         
-    
-/* =========================================
-   RESPONSIVE POLISH - MAHAMIT THEATER
-   ปรับเฉพาะการแสดงผล ไม่เปลี่ยนระบบจอง/ข้อมูล
-========================================= */
-@media (max-width: 639px) {
-    header > div { padding-top: 10px !important; padding-bottom: 10px !important; }
-    #step-indicator { margin-bottom: 1.5rem !important; padding-left: 0; padding-right: 0; }
-    #step-indicator > div { gap: 0; align-items: flex-start; }
-    #step-indicator .step-item { width: 30%; min-width: 0; text-align: center; }
-    #step-indicator .step-item > div { width: 34px !important; height: 34px !important; margin-bottom: 7px !important; font-size: 13px; }
-    #step-indicator .step-item > span { display: block; width: 100%; max-width: 112px; min-height: 34px; margin: 0 auto; font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; }
-    #step-indicator > div > .h-0\.5 { flex: 1 1 auto; min-width: 8px; margin: 16px 5px 0 !important; }
-    #step-1 > div:first-child { margin-bottom: 1.5rem !important; padding: 0 4px; }
-    #step-1 > div:first-child h2 { font-size: 1.65rem; line-height: 1.25; }
-    #step-1 > div:first-child p { max-width: 34rem; margin: 12px auto 0; font-size: 12px; line-height: 1.8; }
-    #movie-grid { grid-template-columns: minmax(0, 1fr) !important; gap: 16px !important; }
-    #movie-grid > div { border-radius: 16px; overflow: hidden; }
-    #movie-grid > div > div:first-child { aspect-ratio: 4 / 3 !important; }
-    #movie-grid > div > div:first-child img { object-position: center 45%; }
-    #movie-grid > div > div:last-child { padding: 14px !important; gap: 12px !important; }
-    #movie-grid h3 { font-size: 15px !important; line-height: 1.5; white-space: normal !important; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    #movie-grid p { font-size: 12px !important; line-height: 1.65; }
-    #movie-grid button { min-height: 44px; font-size: 12px !important; }
-    main { padding-top: 1.25rem !important; padding-bottom: 2rem !important; }
-}
-@media (min-width: 640px) and (max-width: 1023px) {
-    #movie-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 18px !important; }
-}
-
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between selection:bg-brand-red selection:text-white">
@@ -293,22 +263,27 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
 
 <!-- Brand Logo Frame -->
-<div class="flex items-center gap-2 sm:gap-4 cursor-pointer min-w-0"
+<div class="flex items-center gap-3 sm:gap-4 cursor-pointer min-w-0"
      onclick="resetToHome()">
 
-    <!-- โลโก้ -->
+ 
+<!-- Brand Logo Frame -->
+<div class="flex items-center gap-3 sm:gap-4 cursor-pointer min-w-0"
+     onclick="resetToHome()">
+
+    <!-- โลโก้ใหม่ -->
     <img
         src="./logo.png"
         alt="เกรียงไกร มาหามิตร"
-        class="w-20 sm:w-28 md:w-32 h-auto object-contain flex-shrink-0"
+        class="w-24 sm:w-28 md:w-32 h-auto object-contain flex-shrink-0"
     >
 
-    <!-- ชื่อโรงภาพยนตร์: แสดงทั้งมือถือและคอม -->
-    <div class="block min-w-0">
-        <h1 class="text-sm sm:text-xl md:text-2xl font-bold tracking-normal sm:tracking-wider text-white font-classic uppercase leading-tight">
+    <!-- ชื่อโรงภาพยนตร์ -->
+    <div class="hidden sm:block min-w-0">
+        <h1 class="text-xl md:text-2xl font-bold tracking-wider text-white font-classic uppercase">
             MAHAMIT <span class="text-brand-gold">THEATER</span>
         </h1>
-        <p class="text-[8px] sm:text-xs md:text-sm text-brand-lightGray tracking-normal sm:tracking-widest leading-snug mt-1">
+        <p class="text-xs md:text-sm text-brand-lightGray tracking-widest">
             CLASSIC &amp; MODERN CINEMA EXPERIENCE
         </p>
     </div>
@@ -725,7 +700,7 @@
             const container = document.getElementById('movie-grid');
             container.innerHTML = MOVIES_DATA.map(movie => `
                 <div class="bg-brand-card rounded-xl border border-zinc-800 overflow-hidden hover:border-brand-red transition duration-300 flex flex-col justify-between group shadow-lg">
-                    <div class="relative overflow-hidden aspect-[4/3] sm:aspect-[2/3]">
+                    <div class="relative overflow-hidden aspect-[2/3]">
                         <img src="${movie.poster}" alt="${movie.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
                         <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
                         <span class="absolute top-3 right-3 bg-brand-red text-white text-[10px] font-bold px-2 py-1 rounded shadow border border-brand-gold/40">
@@ -1036,41 +1011,58 @@
             });
         }
 
-        // Apps Script responses are cross-origin; JSONP lets us verify the row was actually saved.
+        // JSONP check for Apps Script. Retries transient timeouts while upload/appendRow finishes.
         function checkBookingStatus(bookingId) {
             return new Promise((resolve, reject) => {
                 const callbackName = '__bookingCheck_' + Date.now() + '_' + Math.random().toString(36).slice(2);
                 const script = document.createElement('script');
-                const timeout = setTimeout(() => finish(new Error('หมดเวลารอตรวจสอบผลการบันทึก')), 10000);
+                let finished = false;
+                const timeout = setTimeout(() => finish(new Error('ตรวจสอบ Google Sheet ใช้เวลานานเกินไป')), 7000);
                 function cleanup() {
                     clearTimeout(timeout);
                     delete window[callbackName];
                     if (script.parentNode) script.parentNode.removeChild(script);
                 }
                 function finish(error, result) {
+                    if (finished) return;
+                    finished = true;
                     cleanup();
                     if (error) reject(error);
                     else resolve(result);
                 }
                 window[callbackName] = result => finish(null, result);
-                script.onerror = () => finish(new Error('ตรวจสอบผลการบันทึกจาก Google Apps Script ไม่ได้'));
-                script.src = GOOGLE_SCRIPT_URL + '?action=check&bookingId=' + encodeURIComponent(bookingId) + '&callback=' + encodeURIComponent(callbackName);
+                script.onerror = () => finish(new Error('เปิดจุดตรวจสอบของ Google Apps Script ไม่ได้'));
+                const separator = GOOGLE_SCRIPT_URL.includes('?') ? '&' : '?';
+                script.src = GOOGLE_SCRIPT_URL + separator
+                    + 'action=check&bookingId=' + encodeURIComponent(bookingId)
+                    + '&callback=' + encodeURIComponent(callbackName)
+                    + '&_=' + Date.now();
                 document.head.appendChild(script);
             });
         }
 
         async function waitForBookingSaved(bookingId) {
-            for (let attempt = 0; attempt < 8; attempt++) {
-                const result = await checkBookingStatus(bookingId);
-                if (result && result.success && result.found) return result;
-                if (result && result.success === false && result.message) throw new Error(result.message);
-                await new Promise(resolve => setTimeout(resolve, 1000));
+            let lastCheckError = '';
+            for (let attempt = 0; attempt < 10; attempt++) {
+                try {
+                    const result = await checkBookingStatus(bookingId);
+                    if (result && result.success && result.found) return result;
+                    if (result && result.success === false && result.message) throw new Error(result.message);
+                } catch (error) {
+                    lastCheckError = String(error && error.message ? error.message : error);
+                }
+                await new Promise(resolve => setTimeout(resolve, 1200));
             }
-            throw new Error('ยังไม่พบข้อมูลใน Google Sheet กรุณาตรวจสอบสิทธิ์ Apps Script และโฟลเดอร์ Google Drive แล้วลองอีกครั้ง');
+            throw new Error(
+                'ระบบยังยืนยันข้อมูลจาก Google Sheet ไม่ได้ จึงยังไม่สามารถยืนยันว่าการจองสำเร็จได้ '
+                + (lastCheckError ? 'รายละเอียด: ' + lastCheckError + ' ' : '')
+                + 'กรุณาตรวจสอบว่า Deploy Google Apps Script เป็นเวอร์ชันล่าสุด และตั้งค่า Who has access เป็น Anyone ก่อนลองใหม่'
+            );
         }
 
         async function handleFormSubmit(event) {
             event.preventDefault();
+            showBookingLoading();
 
             const submitBtn = document.getElementById('btn-submit-booking');
             const originalButtonHtml = '<i class="fa-solid fa-paper-plane mr-2"></i> ยืนยันการจองตั๋วภาพยนตร์';
@@ -1135,12 +1127,15 @@
                 document.getElementById('confirmed-amount').innerText = `${totalPrice.toLocaleString()} บาท`;
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalButtonHtml;
+                hideBookingLoading();
                 goToStep(4);
             } catch (error) {
                 console.error('Booking/Drive upload error:', error);
-                alert('บันทึกการจองไม่สำเร็จ: ' + (error.message || 'กรุณาตรวจสอบการเชื่อมต่อแล้วลองใหม่'));
+                // Always close the loading overlay and restore the button before showing the alert.
+                hideBookingLoading();
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalButtonHtml;
+                alert('บันทึกการจองไม่สำเร็จ: ' + (error.message || 'กรุณาตรวจสอบการเชื่อมต่อแล้วลองใหม่'));
             }
         }
 
@@ -1185,7 +1180,7 @@ function hideBookingLoading() {
   <div class="booking-loading-card">
     <!-- เปลี่ยน src ให้เป็น URL โลโก้เดิมของเว็บไซต์ -->
     <img class="booking-loading-logo"
-         src="ใส่_URL_โลโก้เดิมของเว็บไซต์"
+         src="./logo.png"
          alt="MAHAMIT THEATER">
 
     <div class="booking-loading-icon">
