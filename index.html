@@ -137,14 +137,6 @@
     </div>
 
 </div>
-
-            <!-- Header Menu / Actions -->
-            <div class="flex items-center space-x-4">
-                <button onclick="openSettingsModal()" class="text-brand-lightGray hover:text-brand-gold transition px-3 py-1.5 text-xs sm:text-sm rounded border border-zinc-800 hover:border-brand-gold/40 flex items-center space-x-2">
-                    <i class="fa-solid fa-gear"></i>
-                    <span class="hidden md:inline">ตั้งค่า Google Sheet</span>
-                </button>
-            </div>
         </div>
     </header>
 
@@ -446,44 +438,6 @@
 
     </main>
 
-    <!-- SETTINGS MODAL (FOR GOOGLE SHEETS WEB APP URL) -->
-    <div id="settings-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-brand-card max-w-lg w-full rounded-2xl border border-zinc-700 p-6 space-y-5">
-            <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
-                <h3 class="text-lg font-bold text-white flex items-center">
-                    <i class="fa-solid fa-file-csv text-emerald-500 mr-2"></i> ตั้งค่าเชื่อมต่อ Google Sheet
-                </h3>
-                <button onclick="closeSettingsModal()" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
-            </div>
-
-            <div class="space-y-3 text-xs text-brand-lightGray">
-                <p>ใส่นำ Web App URL ที่ได้จาก **Google Apps Script** เพื่อส่งข้อมูลการจองบันทึกลงใน Google Sheet ของคุณโดยตรง:</p>
-                <input type="url" id="gsheet-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-gold font-mono">
-                
-                <div class="bg-zinc-900 p-3 rounded border border-zinc-800 space-y-1">
-                    <p class="text-brand-gold font-bold">💡 โค้ด Google Apps Script (ย่อ):</p>
-                    <pre class="text-[10px] text-zinc-400 overflow-x-auto p-2 bg-black rounded font-mono">
-function doPost(e) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var data = JSON.parse(e.postData.contents);
-  sheet.appendRow([
-    data.bookingId, data.movieTitle, data.date, 
-    data.time, data.seats, data.totalPrice, 
-    data.customerName, data.customerEmail, 
-    data.customerPhone, data.payDate, data.payTime, "รออนุมัติ QR"
-  ]);
-  return ContentService.createTextOutput("Success");
-}</pre>
-                </div>
-            </div>
-
-            <div class="flex justify-end space-x-3 pt-2">
-                <button onclick="closeSettingsModal()" class="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-xs hover:bg-zinc-700">ยกเลิก</button>
-                <button onclick="saveSettings()" class="px-4 py-2 bg-brand-red text-white font-bold rounded-lg text-xs hover:bg-brand-redHover">บันทึก URL</button>
-            </div>
-        </div>
-    </div>
-
     <!-- FOOTER -->
 
 
@@ -563,7 +517,6 @@ function doPost(e) {
         let selectedDate = '';
         let selectedTime = '';
         let selectedSeats = [];
-        let googleSheetUrl = localStorage.getItem('mahamit_gsheet_url') || '';
 
         // Booked Database stored in LocalStorage to persist booked seats across refreshes
         let bookingsDb = JSON.parse(localStorage.getItem('mahamit_bookings_db')) || [];
@@ -574,9 +527,6 @@ function doPost(e) {
         window.onload = function() {
             renderMovies();
             setupDefaultDates();
-            if (googleSheetUrl) {
-                document.getElementById('gsheet-url').value = googleSheetUrl;
-            }
         };
 
         function renderMovies() {
@@ -854,23 +804,34 @@ function doPost(e) {
                 timestamp: new Date().toISOString()
             };
 
-            // Save to internal storage (prevents double booking locally)
-            bookingsDb.push(bookingPayload);
-            localStorage.setItem('mahamit_bookings_db', JSON.stringify(bookingsDb));
+            // ส่งข้อมูลตรงไป Google Apps Script โดยไม่ต้องมีไฟล์ API แยก
+            // หมายเหตุ: no-cors ส่งคำขอข้ามโดเมนได้ แต่เบราว์เซอร์ไม่เปิดเผยผลตอบกลับ
+            const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyuKn9-SJEnZLtRrt_0ypWTmwsDA3aU3ePd_P21BoTW67TXFOJwbjlEObi8D7R8_W4Srg/exec';
 
-            // Optional: Send data to Google Sheet via Web App URL
-            if (googleSheetUrl) {
-                try {
-                    await fetch(googleSheetUrl, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(bookingPayload)
-                    });
-                } catch (err) {
-                    console.warn('Google Sheet submission failed or no-cors:', err);
-                }
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8'
+                    },
+                    body: JSON.stringify(bookingPayload)
+                });
+
+                // no-cors ไม่สามารถอ่านผลจาก Apps Script ได้ จึงเป็นเพียงการส่งคำขอ
+                // อย่าใช้เป็นหลักฐานยืนยันว่าบันทึกลงชีตสำเร็จจนกว่าจะตรวจสอบชีตจริง
+                bookingsDb.push(bookingPayload);
+                localStorage.setItem('mahamit_bookings_db', JSON.stringify(bookingsDb));
+                console.warn('ส่งคำขอไป Apps Script แล้ว แต่เบราว์เซอร์ยืนยันผลการบันทึกไม่ได้');
+
+            } catch (error) {
+                console.error('Booking request error:', error);
+                alert('ส่งข้อมูลไป Google Sheet ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane mr-2"></i> ยืนยันการจองตั๋วภาพยนตร์';
+                return;
             }
+
 
             // Fill Confirmation Screen
             document.getElementById('confirmed-booking-id').innerText = bookingId;
@@ -885,25 +846,6 @@ function doPost(e) {
             submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane mr-2"></i> ยืนยันการจองตั๋วภาพยนตร์`;
 
             goToStep(4);
-        }
-
-        /* ----------------------------------------------------
-         * Settings Modal Functions
-         * ---------------------------------------------------- */
-        function openSettingsModal() {
-            document.getElementById('settings-modal').classList.remove('hidden');
-        }
-
-        function closeSettingsModal() {
-            document.getElementById('settings-modal').classList.add('hidden');
-        }
-
-        function saveSettings() {
-            const url = document.getElementById('gsheet-url').value.trim();
-            googleSheetUrl = url;
-            localStorage.setItem('mahamit_gsheet_url', url);
-            closeSettingsModal();
-            alert('บันทึก Google Sheet Web App URL เรียบร้อยแล้ว!');
         }
     </script>
 </body>
