@@ -910,7 +910,9 @@
                             <div class="bg-zinc-900/90 p-5 rounded-xl border border-zinc-800 flex flex-col md:flex-row items-center gap-6">
                                 <!-- Generated Dynamic QR Code Placeholders -->
                                 <div class="bg-white p-3 rounded-xl shadow-lg text-center flex-shrink-0">
-                                    <img id="promptpay-qr" src="" alt="PromptPay QR Code" class="w-40 h-40 object-contain">
+                                    
+<img id="promptpay-qr" src="./payment-qr.png" alt="PromptPay QR Code" class="w-40 h-40 object-contain">
+
                                     <p class="text-[10px] text-zinc-600 font-mono mt-1">MAHAMIT THEATER OFFICIAL</p>
                                 </div>
                                 <div class="space-y-2 text-sm text-center md:text-left">
@@ -1338,9 +1340,9 @@
             document.getElementById('qr-amount').innerText = `${totalPrice.toLocaleString()} ฿`;
 
             // Dynamic PromptPay QR Code generator URL (using promptpay.io API / placeholder)
-            const promptPayNumber = "0981234567";
-            const qrUrl = `https://promptpay.io/${promptPayNumber}/${totalPrice}.png`;
-            document.getElementById('promptpay-qr').src = qrUrl;
+            
+document.getElementById('promptpay-qr').src = './payment-qr.png';
+
 
             // Button enable status
             const btnProceed = document.getElementById('btn-proceed-to-checkout');
