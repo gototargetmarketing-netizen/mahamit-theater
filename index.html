@@ -67,6 +67,14 @@
             transition: all 0.2s ease;
         }
 
+        .seat.loading {
+            background-color: #3f3f46;
+            border: 2px dashed #a1a1aa;
+            color: #e4e4e7;
+            cursor: wait;
+            opacity: .8;
+        }
+
 /* ที่นั่งว่าง: สีเขียว เห็นชัด */
 .seat.available {
     background-color: #166534;
@@ -827,6 +835,7 @@
 
                 <!-- Seat Grid Container -->
                 <div class="inline-block bg-black/40 p-6 rounded-2xl border border-zinc-800/80 shadow-2xl overflow-x-auto max-w-full">
+                    <p id="seat-sync-warning" class="text-sm text-amber-300 text-center mb-2" role="status" aria-live="polite"></p>
                     <div id="seat-layout" class="flex flex-col gap-3 min-w-[280px]">
                         <!-- Rows A, B, C, E, F dynamically generated -->
                     </div>
@@ -929,7 +938,7 @@
                                     <p id="qr-amount" class="text-2xl font-bold text-brand-gold">0 ฿</p>
                                     <div class="text-xs bg-zinc-800/80 p-2.5 rounded border border-zinc-700 text-zinc-300 space-y-1">
                                         <p><i class="fa-solid fa-building-columns text-brand-gold mr-1"></i> ธนาคารกรุงไทย (KTB)</p>
-                                        <p><i class="fa-solid fa-user text-brand-gold mr-1"></i>บริษัท ล้านเกษตร (ประเทศไทย) จำกัด</p>
+                                        <p><i class="fa-solid fa-user text-brand-gold mr-1"></i> ชื่อบัญชี: บริษัท ล้านเกษตร (ประเทศไทย) จำกัด</p>
                                         <p><i class="fa-solid fa-hashtag text-brand-gold mr-1"></i> เลขบัญชี: 549-0-316-13</p>
                                     </div>
                                 </div>
@@ -1157,8 +1166,11 @@
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyuKn9-SJEnZLtRrt_0ypWTmwsDA3aU3ePd_P21BoTW67TXFOJwbjlEObi8D7R8_W4Srg/exec';
         const googleSheetUrl = GOOGLE_SCRIPT_URL;
 
-        // Booked Database stored in LocalStorage to persist booked seats across refreshes
-        let bookingsDb = JSON.parse(localStorage.getItem('mahamit_bookings_db')) || [];
+        // Google Sheets is the single source of truth for booked seats on every device.
+        let serverBookedSeats = [];
+        let seatAvailabilityLoaded = false;
+        let seatRefreshTimer = null;
+        let bookingsDb = []; // legacy variable retained; never used as the source of seat availability
 
         /* ----------------------------------------------------
          * Initialization & Navigation
@@ -1269,8 +1281,19 @@
                 </button>
             `).join('');
 
+            seatAvailabilityLoaded = false;
+            serverBookedSeats = [];
             renderSeatGrid();
             updateSeatSummary();
+            loadBookedSeatsForCurrentSlot();
+
+            // Refresh from the shared Google Sheet while the booking page is open.
+            if (seatRefreshTimer) clearInterval(seatRefreshTimer);
+            seatRefreshTimer = setInterval(() => {
+                if (currentStep === 2 && selectedMovie && selectedDate && selectedTime) {
+                    loadBookedSeatsForCurrentSlot();
+                }
+            }, 15000);
         }
 
         function selectTimeSlot(time) {
@@ -1281,16 +1304,72 @@
 
         function getBookedSeatsForCurrentSlot() {
             if (!selectedMovie || !selectedDate || !selectedTime) return [];
-            
-            // Filter database for matching movie + date + showtime
-            return bookingsDb
-                .filter(b => b.movieId === selectedMovie.id && b.date === selectedDate && b.time === selectedTime)
-                .flatMap(b => b.seats);
+            return serverBookedSeats;
+        }
+
+        // JSONP is used because Google Apps Script web apps do not reliably provide browser CORS headers.
+        function requestJsonp(url, callbackPrefix, timeoutMs = 8000) {
+            return new Promise((resolve, reject) => {
+                const callbackName = callbackPrefix + Date.now() + '_' + Math.random().toString(36).slice(2);
+                const script = document.createElement('script');
+                let finished = false;
+                const timeout = setTimeout(() => finish(new Error('เชื่อมต่อ Google Sheets ไม่สำเร็จ กรุณาลองใหม่')), timeoutMs);
+                function cleanup() {
+                    clearTimeout(timeout);
+                    try { delete window[callbackName]; } catch (e) { window[callbackName] = undefined; }
+                    if (script.parentNode) script.parentNode.removeChild(script);
+                }
+                function finish(error, result) {
+                    if (finished) return;
+                    finished = true;
+                    cleanup();
+                    if (error) reject(error); else resolve(result);
+                }
+                window[callbackName] = result => finish(null, result);
+                script.onerror = () => finish(new Error('เปิด Google Apps Script ไม่ได้'));
+                const separator = url.includes('?') ? '&' : '?';
+                script.src = url + separator + 'callback=' + encodeURIComponent(callbackName) + '&_=' + Date.now();
+                document.head.appendChild(script);
+            });
+        }
+
+        async function loadBookedSeatsForCurrentSlot() {
+            if (!selectedMovie || !selectedDate || !selectedTime) return;
+            const movieId = selectedMovie.id;
+            const date = selectedDate;
+            const time = selectedTime;
+            const slotKey = `${movieId}|${date}|${time}`;
+            try {
+                const url = GOOGLE_SCRIPT_URL
+                    + '?action=seats'
+                    + '&movieId=' + encodeURIComponent(movieId)
+                    + '&date=' + encodeURIComponent(date)
+                    + '&time=' + encodeURIComponent(time);
+                const result = await requestJsonp(url, '__seatCheck_');
+                // Ignore a delayed response if the customer has changed movie/date/showtime.
+                if (!selectedMovie || `${selectedMovie.id}|${selectedDate}|${selectedTime}` !== slotKey) return;
+                if (!result || result.success !== true || !Array.isArray(result.seats)) {
+                    throw new Error((result && result.message) || 'อ่านข้อมูลที่นั่งจาก Google Sheets ไม่สำเร็จ');
+                }
+                serverBookedSeats = result.seats.map(String);
+                seatAvailabilityLoaded = true;
+                selectedSeats = selectedSeats.filter(seat => !serverBookedSeats.includes(seat));
+                renderSeatGrid();
+                updateSeatSummary();
+            } catch (error) {
+                console.error('Seat availability error:', error);
+                seatAvailabilityLoaded = false;
+                renderSeatGrid();
+                const note = document.getElementById('seat-sync-warning');
+                if (note) note.textContent = 'ยังตรวจสอบที่นั่งจากระบบกลางไม่ได้ กรุณารีเฟรชหน้าเว็บหรือลองใหม่ก่อนเลือกที่นั่ง';
+            }
         }
 
         function renderSeatGrid() {
             const layout = document.getElementById('seat-layout');
             const bookedSeats = getBookedSeatsForCurrentSlot();
+            const warning = document.getElementById('seat-sync-warning');
+            if (warning && seatAvailabilityLoaded) warning.textContent = '';
 
             layout.innerHTML = SEAT_ROWS.map(row => {
                 let rowSeatsHTML = '';
@@ -1298,14 +1377,16 @@
                     const seatId = `${row}${i}`;
                     const isBooked = bookedSeats.includes(seatId);
                     const isSelected = selectedSeats.includes(seatId);
+                    const isLoading = !seatAvailabilityLoaded;
 
                     let seatClass = 'seat available';
-                    if (isBooked) seatClass = 'seat booked';
+                    if (isLoading) seatClass = 'seat loading';
+                    else if (isBooked) seatClass = 'seat booked';
                     else if (isSelected) seatClass = 'seat selected';
 
                     rowSeatsHTML += `
                         <button type="button" 
-                            ${isBooked ? 'disabled' : ''} 
+                            ${(isLoading || isBooked) ? 'disabled' : ''} 
                             onclick="toggleSeat('${seatId}')"
                             class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm ${seatClass}">
                             ${seatId}
@@ -1324,6 +1405,7 @@
         }
 
         function toggleSeat(seatId) {
+            if (!seatAvailabilityLoaded || serverBookedSeats.includes(seatId)) return;
             if (selectedSeats.includes(seatId)) {
                 selectedSeats = selectedSeats.filter(s => s !== seatId);
             } else {
@@ -1588,8 +1670,8 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
 
                 const savedResult = await waitForBookingSaved(bookingId);
                 bookingPayload.paymentSlipUrl = savedResult.paymentSlipUrl || '';
-                bookingsDb.push(bookingPayload);
-                localStorage.setItem('mahamit_bookings_db', JSON.stringify(bookingsDb));
+                // Refresh the shared seat state after the server confirms the booking row.
+                await loadBookedSeatsForCurrentSlot();
 
                 document.getElementById('confirmed-booking-id').innerText = bookingId;
                 document.getElementById('confirmed-email').innerText = custEmail;
