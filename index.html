@@ -297,6 +297,316 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between selection:bg-brand-red selection:text-white">
 
+
+<!-- MAHAMIT THEATER - MOVIE POSTER INTRO -->
+<style>
+  #movieIntro {
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    background: #0b0b0d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity .35s ease, visibility .35s ease;
+  }
+
+  #movieIntro.intro-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  #movieIntro .intro-panel {
+    width: min(100%, 1050px);
+    height: min(90dvh, 850px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    gap: 14px;
+  }
+
+  #movieIntro .intro-close {
+    position: absolute;
+    right: 0;
+    top: 0;
+    z-index: 2;
+    width: 44px;
+    height: 44px;
+    border: 1px solid #d7ad45;
+    border-radius: 50%;
+    background: rgba(20,20,22,.92);
+    color: #fff;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  #movieIntro .intro-heading {
+    color: #d7ad45;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-align: center;
+    margin: 0;
+  }
+
+  #movieIntro .intro-poster-wrap {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #movieIntro .intro-poster {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 12px 45px rgba(0,0,0,.5);
+    transition: opacity .2s ease;
+  }
+
+  #movieIntro .intro-thumbnails {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 0;
+  }
+
+  #movieIntro .intro-thumb {
+    width: 54px;
+    height: 72px;
+    padding: 3px;
+    background: #202024;
+    border: 2px solid #44444a;
+    border-radius: 6px;
+    cursor: pointer;
+    opacity: .65;
+    overflow: hidden;
+  }
+
+  #movieIntro .intro-thumb.active {
+    border-color: #d7ad45;
+    opacity: 1;
+    box-shadow: 0 0 12px rgba(215,173,69,.2);
+  }
+
+  #movieIntro .intro-thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  #movieIntro .intro-caption {
+    color: #d7ad45;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-align: center;
+    margin: 0;
+  }
+
+  #movieIntro .intro-progress {
+    width: min(180px, 50%);
+    height: 3px;
+    background: #303034;
+    overflow: hidden;
+    border-radius: 3px;
+  }
+
+  #movieIntro .intro-progress-fill {
+    width: 0;
+    height: 100%;
+    background: #921d35;
+  }
+
+  #movieIntro .intro-progress-fill.running {
+    animation: introProgress 3s linear forwards;
+  }
+
+  @keyframes introProgress {
+    from { width: 0; }
+    to { width: 100%; }
+  }
+
+  @media (max-width: 600px) {
+    #movieIntro {
+      padding: 12px;
+    }
+
+    #movieIntro .intro-panel {
+      width: 100%;
+      height: 88dvh;
+      gap: 12px;
+    }
+
+    #movieIntro .intro-close {
+      right: 2px;
+      top: 2px;
+      width: 40px;
+      height: 40px;
+    }
+
+    #movieIntro .intro-heading {
+      font-size: 10px;
+      letter-spacing: 2px;
+      padding-top: 8px;
+    }
+
+    #movieIntro .intro-poster {
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    #movieIntro .intro-thumb {
+      width: 48px;
+      height: 64px;
+    }
+  }
+</style>
+
+<div id="movieIntro" role="dialog"
+     aria-label="โปสเตอร์ภาพยนตร์"
+     aria-modal="true">
+  <div class="intro-panel">
+    <button class="intro-close" id="introClose"
+            type="button" aria-label="ปิดหน้าสไลด์">×</button>
+
+    <p class="intro-heading">MAHAMIT THEATER</p>
+
+    <div class="intro-poster-wrap">
+      <img id="introPoster"
+           class="intro-poster"
+           src="./poster-avengers.jpg"
+           alt="Avengers Endgame">
+    </div>
+
+    <p class="intro-caption" id="introCaption">
+      NOW SHOWING
+    </p>
+
+    <div class="intro-thumbnails">
+      <button class="intro-thumb active" type="button"
+              data-slide="0" aria-label="เลือก Avengers Endgame"
+              aria-pressed="true">
+        <img src="./poster-avengers.jpg" alt="">
+      </button>
+
+      <button class="intro-thumb" type="button"
+              data-slide="1" aria-label="เลือก Friend Zone"
+              aria-pressed="false">
+        <img src="./poster-friendzone.jpg" alt="">
+      </button>
+    </div>
+
+    <div class="intro-progress">
+      <div class="intro-progress-fill" id="introProgress"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const intro = document.getElementById('movieIntro');
+  if (!intro) return;
+
+  const poster = document.getElementById('introPoster');
+  const caption = document.getElementById('introCaption');
+  const closeBtn = document.getElementById('introClose');
+  const progress = document.getElementById('introProgress');
+  const thumbs = Array.from(
+    intro.querySelectorAll('.intro-thumb')
+  );
+
+  const slides = [
+    {
+      src: './poster-avengers.jpg',
+      alt: 'Avengers Endgame',
+      caption: 'AVENGERS: ENDGAME'
+    },
+    {
+      src: './poster-friendzone.jpg',
+      alt: 'Friend Zone',
+      caption: 'FRIEND ZONE'
+    }
+  ];
+
+  let current = 0;
+  let timer = null;
+  let closed = false;
+
+  function showSlide(index) {
+    current = index;
+    poster.style.opacity = '0';
+
+    window.setTimeout(function () {
+      if (closed) return;
+      poster.src = slides[current].src;
+      poster.alt = slides[current].alt;
+      caption.textContent = slides[current].caption;
+      poster.style.opacity = '1';
+    }, 150);
+
+    thumbs.forEach(function (thumb, i) {
+      thumb.classList.toggle('active', i === current);
+      thumb.setAttribute(
+        'aria-pressed',
+        i === current ? 'true' : 'false'
+      );
+    });
+
+    progress.classList.remove('running');
+    void progress.offsetWidth;
+    progress.classList.add('running');
+
+    clearTimeout(timer);
+    timer = setTimeout(function () {
+      showSlide((current + 1) % slides.length);
+    }, 3000);
+  }
+
+  function closeIntro() {
+    closed = true;
+    clearTimeout(timer);
+    intro.classList.add('intro-hidden');
+    document.body.style.overflow = '';
+  }
+
+  thumbs.forEach(function (thumb) {
+    thumb.addEventListener('click', function () {
+      showSlide(Number(thumb.dataset.slide));
+    });
+  });
+
+  closeBtn.addEventListener('click', closeIntro);
+
+  document.addEventListener('keydown', function (event) {
+    if (!closed && event.key === 'Escape') {
+      closeIntro();
+    }
+  });
+
+  document.body.style.overflow = 'hidden';
+  showSlide(0);
+})();
+</script>
+<!-- END MOVIE POSTER INTRO -->
+
+
+    
     <!-- HEADER / NAVIGATION -->
     <header class="bg-brand-dark border-b border-brand-red/30 sticky top-0 z-50 backdrop-blur-md bg-opacity-95">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
