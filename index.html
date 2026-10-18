@@ -139,12 +139,7 @@
 </div>
 
             <!-- Header Menu / Actions -->
-            <div class="flex items-center space-x-4">
-                <button onclick="openSettingsModal()" class="text-brand-lightGray hover:text-brand-gold transition px-3 py-1.5 text-xs sm:text-sm rounded border border-zinc-800 hover:border-brand-gold/40 flex items-center space-x-2">
-                    <i class="fa-solid fa-gear"></i>
-                    <span class="hidden md:inline">ตั้งค่า Google Sheet</span>
-                </button>
-            </div>
+            <div class="flex items-center space-x-4" aria-hidden="true"></div>
         </div>
     </header>
 
@@ -280,7 +275,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 
                 <!-- Left Column: User Information & Payment Upload -->
-                <div class="lg:col-span-7 bg-brand-card p-6 sm:p-8 rounded-xl border border-zinc-800 space-y-6">
+                <div class="lg:col-span-7 order-2 lg:order-1 bg-brand-card p-6 sm:p-8 rounded-xl border border-zinc-800 space-y-6">
                     <h3 class="text-xl font-bold text-white border-b border-zinc-800 pb-3 flex items-center">
                         <i class="fa-solid fa-user-pen text-brand-gold mr-3"></i> ข้อมูลผู้จองภาพยนตร์
                     </h3>
@@ -341,7 +336,7 @@
                                 <label for="payment-slip" class="block text-xs font-medium text-brand-lightGray mb-2">แนบสลิปการชำระเงิน <span class="text-brand-red">*</span></label>
                                 <input type="file" id="payment-slip" name="paymentSlip" accept="image/*,.pdf,application/pdf" required
                                     class="block w-full text-sm text-brand-lightGray bg-zinc-900 border border-zinc-700 rounded-lg p-3 file:mr-3 file:rounded-md file:border-0 file:bg-brand-red file:px-3 file:py-2 file:text-white file:font-semibold hover:file:bg-brand-redHover">
-                                <p class="text-[11px] text-brand-lightGray mt-2">รองรับรูปภาพหรือ PDF ขนาดไม่เกิน 4 MB ไฟล์จะถูกเก็บใน Google Drive ของโรงภาพยนตร์</p>
+                                <p class="text-[11px] text-brand-lightGray mt-2">รูปภาพจะถูกย่อและบีบอัดอัตโนมัติก่อนส่ง (แนะนำภาพจากมือถือได้เลย) ส่วน PDF รองรับไม่เกิน 4 MB ไฟล์จะถูกเก็บใน Google Drive ของโรงภาพยนตร์</p>
                             </div>
                         </div>
 
@@ -357,7 +352,7 @@
                 </div>
 
                 <!-- Right Column: Booking Summary Ticket Style -->
-                <div class="lg:col-span-5">
+                <div class="lg:col-span-5 order-1 lg:order-2">
                     <div class="bg-zinc-900 rounded-2xl border-2 border-brand-red/50 overflow-hidden shadow-2xl relative">
                         <!-- Top Decorative Header -->
                         <div class="bg-brand-red px-6 py-4 border-b border-brand-gold/40 flex justify-between items-center">
@@ -455,42 +450,6 @@
     </main>
 
     <!-- SETTINGS MODAL (FOR GOOGLE SHEETS WEB APP URL) -->
-    <div id="settings-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-brand-card max-w-lg w-full rounded-2xl border border-zinc-700 p-6 space-y-5">
-            <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
-                <h3 class="text-lg font-bold text-white flex items-center">
-                    <i class="fa-solid fa-file-csv text-emerald-500 mr-2"></i> ตั้งค่าเชื่อมต่อ Google Sheet
-                </h3>
-                <button onclick="closeSettingsModal()" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
-            </div>
-
-            <div class="space-y-3 text-xs text-brand-lightGray">
-                <p>ใส่นำ Web App URL ที่ได้จาก **Google Apps Script** เพื่อส่งข้อมูลการจองบันทึกลงใน Google Sheet ของคุณโดยตรง:</p>
-                <input type="url" id="gsheet-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-gold font-mono">
-                
-                <div class="bg-zinc-900 p-3 rounded border border-zinc-800 space-y-1">
-                    <p class="text-brand-gold font-bold">💡 โค้ด Google Apps Script (ย่อ):</p>
-                    <pre class="text-[10px] text-zinc-400 overflow-x-auto p-2 bg-black rounded font-mono">
-function doPost(e) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var data = JSON.parse(e.postData.contents);
-  sheet.appendRow([
-    data.bookingId, data.movieTitle, data.date, 
-    data.time, data.seats, data.totalPrice, 
-    data.customerName, data.customerEmail, 
-    data.customerPhone, data.payDate, data.payTime, "รออนุมัติ QR"
-  ]);
-  return ContentService.createTextOutput("Success");
-}</pre>
-                </div>
-            </div>
-
-            <div class="flex justify-end space-x-3 pt-2">
-                <button onclick="closeSettingsModal()" class="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-xs hover:bg-zinc-700">ยกเลิก</button>
-                <button onclick="saveSettings()" class="px-4 py-2 bg-brand-red text-white font-bold rounded-lg text-xs hover:bg-brand-redHover">บันทึก URL</button>
-            </div>
-        </div>
-    </div>
 
     <!-- FOOTER -->
 
@@ -572,7 +531,7 @@ function doPost(e) {
         let selectedTime = '';
         let selectedSeats = [];
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyuKn9-SJEnZLtRrt_0ypWTmwsDA3aU3ePd_P21BoTW67TXFOJwbjlEObi8D7R8_W4Srg/exec';
-        let googleSheetUrl = localStorage.getItem('mahamit_gsheet_url') || '';
+        const googleSheetUrl = GOOGLE_SCRIPT_URL;
 
         // Booked Database stored in LocalStorage to persist booked seats across refreshes
         let bookingsDb = JSON.parse(localStorage.getItem('mahamit_bookings_db')) || [];
@@ -583,9 +542,6 @@ function doPost(e) {
         window.onload = function() {
             renderMovies();
             setupDefaultDates();
-            if (googleSheetUrl) {
-                document.getElementById('gsheet-url').value = googleSheetUrl;
-            }
         };
 
         function renderMovies() {
@@ -831,7 +787,64 @@ function doPost(e) {
         /* ----------------------------------------------------
          * Form Submission & Google Sheets Integration
          * ---------------------------------------------------- */
-        // Read a selected receipt as base64 so Apps Script can save it in Drive.
+        // Compress receipt images in the browser before converting to base64.
+        // This avoids the old 4 MB error for large phone photos. PDFs remain capped at 4 MB.
+        async function preparePaymentSlip(file) {
+            const MAX_IMAGE_BYTES = 1500 * 1024; // target <= 1.5 MB
+            const MAX_PDF_BYTES = 4 * 1024 * 1024;
+            if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+                if (file.size > MAX_PDF_BYTES) {
+                    throw new Error('PDF มีขนาดเกิน 4 MB กรุณาบีบอัด PDF ก่อนแนบ หรือส่งเป็นรูปภาพแทน');
+                }
+                return file;
+            }
+            if (!file.type.startsWith('image/')) {
+                throw new Error('กรุณาแนบไฟล์รูปภาพหรือ PDF เท่านั้น');
+            }
+            // Small images can be used as-is; large images are resized and JPEG-compressed.
+            if (file.size <= MAX_IMAGE_BYTES && /image\/(jpeg|jpg|webp)/i.test(file.type)) return file;
+
+            const imageUrl = URL.createObjectURL(file);
+            try {
+                const img = await new Promise((resolve, reject) => {
+                    const image = new Image();
+                    image.onload = () => resolve(image);
+                    image.onerror = () => reject(new Error('เปิดรูปสลิปไม่ได้ กรุณาเลือกรูปใหม่'));
+                    image.src = imageUrl;
+                });
+                const maxDimension = 1800;
+                const scale = Math.min(1, maxDimension / Math.max(img.naturalWidth, img.naturalHeight));
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+                canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+                const ctx = canvas.getContext('2d');
+                if (!ctx) throw new Error('ไม่สามารถประมวลผลรูปสลิปได้ กรุณาลองใหม่');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                let quality = 0.82;
+                let blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+                while (blob && blob.size > MAX_IMAGE_BYTES && quality > 0.42) {
+                    quality -= 0.10;
+                    blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+                }
+                if (!blob) throw new Error('บีบอัดรูปสลิปไม่สำเร็จ กรุณาเลือกรูปใหม่');
+                if (blob.size > MAX_IMAGE_BYTES) {
+                    // One additional resize pass for exceptionally large images.
+                    const smaller = document.createElement('canvas');
+                    smaller.width = Math.round(canvas.width * 0.75);
+                    smaller.height = Math.round(canvas.height * 0.75);
+                    const smallerCtx = smaller.getContext('2d');
+                    smallerCtx.drawImage(canvas, 0, 0, smaller.width, smaller.height);
+                    blob = await new Promise(resolve => smaller.toBlob(resolve, 'image/jpeg', 0.55));
+                }
+                if (!blob || blob.size > MAX_IMAGE_BYTES) throw new Error('รูปสลิปยังมีขนาดใหญ่เกินไป กรุณาถ่ายภาพใหม่หรือครอปรูปให้พอดี');
+                const baseName = file.name.replace(/\.[^.]+$/, '') || 'payment-slip';
+                return new File([blob], baseName + '.jpg', { type: 'image/jpeg', lastModified: Date.now() });
+            } finally {
+                URL.revokeObjectURL(imageUrl);
+            }
+        }
+
         function readPaymentSlip(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -839,11 +852,7 @@ function doPost(e) {
                     const dataUrl = String(reader.result || '');
                     const comma = dataUrl.indexOf(',');
                     if (comma < 0) return reject(new Error('อ่านไฟล์สลิปไม่สำเร็จ'));
-                    resolve({
-                        name: file.name,
-                        mimeType: file.type || 'application/octet-stream',
-                        base64: dataUrl.slice(comma + 1)
-                    });
+                    resolve({ name: file.name, mimeType: file.type || 'application/octet-stream', base64: dataUrl.slice(comma + 1) });
                 };
                 reader.onerror = () => reject(new Error('อ่านไฟล์สลิปไม่สำเร็จ กรุณาเลือกไฟล์ใหม่'));
                 reader.readAsDataURL(file);
@@ -895,8 +904,7 @@ function doPost(e) {
                 const slipInput = document.getElementById('payment-slip');
                 const slipFile = slipInput && slipInput.files ? slipInput.files[0] : null;
                 if (!slipFile) throw new Error('กรุณาแนบสลิปการชำระเงินก่อนยืนยันการจอง');
-                if (slipFile.size > 4 * 1024 * 1024) throw new Error('ไฟล์สลิปต้องมีขนาดไม่เกิน 4 MB');
-                if (!(slipFile.type.startsWith('image/') || slipFile.type === 'application/pdf')) {
+                if (!(slipFile.type.startsWith('image/') || slipFile.type === 'application/pdf' || slipFile.name.toLowerCase().endsWith('.pdf'))) {
                     throw new Error('กรุณาแนบไฟล์รูปภาพหรือ PDF เท่านั้น');
                 }
 
@@ -909,7 +917,8 @@ function doPost(e) {
                 const totalPrice = selectedSeats.length * TICKET_PRICE;
                 if (!selectedMovie || !selectedSeats.length) throw new Error('กรุณาเลือกภาพยนตร์ รอบฉาย และที่นั่งก่อน');
 
-                const paymentSlip = await readPaymentSlip(slipFile);
+                const preparedSlip = await preparePaymentSlip(slipFile);
+                const paymentSlip = await readPaymentSlip(preparedSlip);
                 const bookingPayload = {
                     bookingId: bookingId,
                     movieId: selectedMovie.id,
@@ -958,24 +967,6 @@ function doPost(e) {
             }
         }
 
-        /* ----------------------------------------------------
-         * Settings Modal Functions
-         * ---------------------------------------------------- */
-        function openSettingsModal() {
-            document.getElementById('settings-modal').classList.remove('hidden');
-        }
-
-        function closeSettingsModal() {
-            document.getElementById('settings-modal').classList.add('hidden');
-        }
-
-        function saveSettings() {
-            const url = document.getElementById('gsheet-url').value.trim();
-            googleSheetUrl = url;
-            localStorage.setItem('mahamit_gsheet_url', url);
-            closeSettingsModal();
-            alert('บันทึก Google Sheet Web App URL เรียบร้อยแล้ว!');
-        }
     </script>
 </body>
 </html>
