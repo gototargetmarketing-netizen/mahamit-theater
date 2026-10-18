@@ -277,10 +277,10 @@
 
         <!-- STEP 3: CUSTOMER FORM & PAYMENT -->
         <section id="step-3" class="hidden space-y-8">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 
                 <!-- Left Column: User Information & Payment Upload -->
-                <div class="order-2 lg:order-1 lg:col-span-7 bg-brand-card p-5 sm:p-8 rounded-xl border border-zinc-800 space-y-6">
+                <div class="lg:col-span-7 bg-brand-card p-6 sm:p-8 rounded-xl border border-zinc-800 space-y-6">
                     <h3 class="text-xl font-bold text-white border-b border-zinc-800 pb-3 flex items-center">
                         <i class="fa-solid fa-user-pen text-brand-gold mr-3"></i> ข้อมูลผู้จองภาพยนตร์
                     </h3>
@@ -335,13 +335,21 @@
                                     <input type="time" id="pay-time" required class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
                                 </div>
                             </div>
+
+                            <!-- Payment Slip Upload -->
+                            <div class="mt-5">
+                                <label for="payment-slip" class="block text-xs font-medium text-brand-lightGray mb-2">แนบสลิปการชำระเงิน <span class="text-brand-red">*</span></label>
+                                <input type="file" id="payment-slip" name="paymentSlip" accept="image/*,.pdf,application/pdf" required
+                                    class="block w-full text-sm text-brand-lightGray bg-zinc-900 border border-zinc-700 rounded-lg p-3 file:mr-3 file:rounded-md file:border-0 file:bg-brand-red file:px-3 file:py-2 file:text-white file:font-semibold hover:file:bg-brand-redHover">
+                                <p class="text-[11px] text-brand-lightGray mt-2">รองรับรูปภาพหรือ PDF ขนาดไม่เกิน 4 MB ไฟล์จะถูกเก็บใน Google Drive ของโรงภาพยนตร์</p>
+                            </div>
                         </div>
 
-                        <div class="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
-                            <button type="button" onclick="goToStep(2)" class="w-full sm:w-auto text-sm text-brand-lightGray hover:text-white px-4 py-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition">
+                        <div class="pt-4 flex items-center justify-between gap-4">
+                            <button type="button" onclick="goToStep(2)" class="text-sm text-brand-lightGray hover:text-white px-4 py-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition">
                                 <i class="fa-solid fa-arrow-left mr-1"></i> ย้อนกลับ
                             </button>
-                            <button type="submit" id="btn-submit-booking" class="w-full sm:flex-1 bg-brand-red hover:bg-brand-redHover text-white font-bold py-4 sm:py-3.5 px-6 rounded-xl transition shadow-lg border border-brand-gold/40 flex items-center justify-center">
+                            <button type="submit" id="btn-submit-booking" class="flex-1 bg-brand-red hover:bg-brand-redHover text-white font-bold py-3.5 px-6 rounded-xl transition shadow-lg border border-brand-gold/40 flex items-center justify-center">
                                 <i class="fa-solid fa-paper-plane mr-2"></i> ยืนยันการจองตั๋วภาพยนตร์
                             </button>
                         </div>
@@ -349,7 +357,7 @@
                 </div>
 
                 <!-- Right Column: Booking Summary Ticket Style -->
-                <div class="order-1 lg:order-2 lg:col-span-5">
+                <div class="lg:col-span-5">
                     <div class="bg-zinc-900 rounded-2xl border-2 border-brand-red/50 overflow-hidden shadow-2xl relative">
                         <!-- Top Decorative Header -->
                         <div class="bg-brand-red px-6 py-4 border-b border-brand-gold/40 flex justify-between items-center">
@@ -563,6 +571,7 @@ function doPost(e) {
         let selectedDate = '';
         let selectedTime = '';
         let selectedSeats = [];
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyuKn9-SJEnZLtRrt_0ypWTmwsDA3aU3ePd_P21BoTW67TXFOJwbjlEObi8D7R8_W4Srg/exec';
         let googleSheetUrl = localStorage.getItem('mahamit_gsheet_url') || '';
 
         // Booked Database stored in LocalStorage to persist booked seats across refreshes
@@ -822,91 +831,131 @@ function doPost(e) {
         /* ----------------------------------------------------
          * Form Submission & Google Sheets Integration
          * ---------------------------------------------------- */
+        // Read a selected receipt as base64 so Apps Script can save it in Drive.
+        function readPaymentSlip(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const dataUrl = String(reader.result || '');
+                    const comma = dataUrl.indexOf(',');
+                    if (comma < 0) return reject(new Error('อ่านไฟล์สลิปไม่สำเร็จ'));
+                    resolve({
+                        name: file.name,
+                        mimeType: file.type || 'application/octet-stream',
+                        base64: dataUrl.slice(comma + 1)
+                    });
+                };
+                reader.onerror = () => reject(new Error('อ่านไฟล์สลิปไม่สำเร็จ กรุณาเลือกไฟล์ใหม่'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Apps Script responses are cross-origin; JSONP lets us verify the row was actually saved.
+        function checkBookingStatus(bookingId) {
+            return new Promise((resolve, reject) => {
+                const callbackName = '__bookingCheck_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+                const script = document.createElement('script');
+                const timeout = setTimeout(() => finish(new Error('หมดเวลารอตรวจสอบผลการบันทึก')), 10000);
+                function cleanup() {
+                    clearTimeout(timeout);
+                    delete window[callbackName];
+                    if (script.parentNode) script.parentNode.removeChild(script);
+                }
+                function finish(error, result) {
+                    cleanup();
+                    if (error) reject(error);
+                    else resolve(result);
+                }
+                window[callbackName] = result => finish(null, result);
+                script.onerror = () => finish(new Error('ตรวจสอบผลการบันทึกจาก Google Apps Script ไม่ได้'));
+                script.src = GOOGLE_SCRIPT_URL + '?action=check&bookingId=' + encodeURIComponent(bookingId) + '&callback=' + encodeURIComponent(callbackName);
+                document.head.appendChild(script);
+            });
+        }
+
+        async function waitForBookingSaved(bookingId) {
+            for (let attempt = 0; attempt < 8; attempt++) {
+                const result = await checkBookingStatus(bookingId);
+                if (result && result.success && result.found) return result;
+                if (result && result.success === false && result.message) throw new Error(result.message);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            throw new Error('ยังไม่พบข้อมูลใน Google Sheet กรุณาตรวจสอบสิทธิ์ Apps Script และโฟลเดอร์ Google Drive แล้วลองอีกครั้ง');
+        }
+
         async function handleFormSubmit(event) {
             event.preventDefault();
 
             const submitBtn = document.getElementById('btn-submit-booking');
+            const originalButtonHtml = '<i class="fa-solid fa-paper-plane mr-2"></i> ยืนยันการจองตั๋วภาพยนตร์';
             submitBtn.disabled = true;
-            submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> กำลังส่งข้อมูล...`;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> กำลังส่งข้อมูลและอัปโหลดสลิป...';
 
-            const bookingId = document.getElementById('ticket-id-preview').innerText;
-            const custName = document.getElementById('cust-name').value;
-            const custEmail = document.getElementById('cust-email').value;
-            const custPhone = document.getElementById('cust-phone').value;
-            const payDate = document.getElementById('pay-date').value;
-            const payTime = document.getElementById('pay-time').value;
-            const totalPrice = selectedSeats.length * TICKET_PRICE;
+            try {
+                const slipInput = document.getElementById('payment-slip');
+                const slipFile = slipInput && slipInput.files ? slipInput.files[0] : null;
+                if (!slipFile) throw new Error('กรุณาแนบสลิปการชำระเงินก่อนยืนยันการจอง');
+                if (slipFile.size > 4 * 1024 * 1024) throw new Error('ไฟล์สลิปต้องมีขนาดไม่เกิน 4 MB');
+                if (!(slipFile.type.startsWith('image/') || slipFile.type === 'application/pdf')) {
+                    throw new Error('กรุณาแนบไฟล์รูปภาพหรือ PDF เท่านั้น');
+                }
 
-            const bookingPayload = {
-                bookingId: bookingId,
-                movieId: selectedMovie.id,
-                movieTitle: selectedMovie.title,
-                date: selectedDate,
-                time: selectedTime,
-                seats: selectedSeats.sort(),
-                seatsText: selectedSeats.sort().join(', '),
-                totalPrice: totalPrice,
-                customerName: custName,
-                customerEmail: custEmail,
-                customerPhone: custPhone,
-                payDate: payDate,
-                payTime: payTime,
-                timestamp: new Date().toISOString()
-            };
+                const bookingId = document.getElementById('ticket-id-preview').innerText;
+                const custName = document.getElementById('cust-name').value.trim();
+                const custEmail = document.getElementById('cust-email').value.trim();
+                const custPhone = document.getElementById('cust-phone').value.trim();
+                const payDate = document.getElementById('pay-date').value;
+                const payTime = document.getElementById('pay-time').value;
+                const totalPrice = selectedSeats.length * TICKET_PRICE;
+                if (!selectedMovie || !selectedSeats.length) throw new Error('กรุณาเลือกภาพยนตร์ รอบฉาย และที่นั่งก่อน');
 
-            // Save to internal storage (prevents double booking locally)
-            bookingsDb.push(bookingPayload);
-            localStorage.setItem('mahamit_bookings_db', JSON.stringify(bookingsDb));
+                const paymentSlip = await readPaymentSlip(slipFile);
+                const bookingPayload = {
+                    bookingId: bookingId,
+                    movieId: selectedMovie.id,
+                    movieTitle: selectedMovie.title,
+                    date: selectedDate,
+                    time: selectedTime,
+                    seats: [...selectedSeats].sort(),
+                    seatsText: [...selectedSeats].sort().join(', '),
+                    totalPrice: totalPrice,
+                    customerName: custName,
+                    customerEmail: custEmail,
+                    customerPhone: custPhone,
+                    payDate: payDate,
+                    payTime: payTime,
+                    timestamp: new Date().toISOString(),
+                    paymentSlip: paymentSlip
+                };
 
-            // Optional: Send data to Google Sheet via Web App URL
+                // text/plain avoids a browser CORS preflight. The follow-up JSONP call verifies the row exists.
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+                    body: JSON.stringify(bookingPayload)
+                });
 
-try {
-  const response = await fetch('/api/booking', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(bookingPayload)
-  });
+                const savedResult = await waitForBookingSaved(bookingId);
+                bookingPayload.paymentSlipUrl = savedResult.paymentSlipUrl || '';
+                bookingsDb.push(bookingPayload);
+                localStorage.setItem('mahamit_bookings_db', JSON.stringify(bookingsDb));
 
-  const result = await response.json();
-
-  if (!response.ok || !result.success) {
-    throw new Error(
-      result.message || 'บันทึกข้อมูลการจองไม่สำเร็จ'
-    );
-  }
-
-  console.log('บันทึกการจองสำเร็จ:', result.bookingId);
-
-} catch (error) {
-  console.error('Booking error:', error);
-
-  alert(
-    'ไม่สามารถบันทึกข้อมูลการจองได้ กรุณาลองใหม่อีกครั้ง'
-  );
-
-  submitBtn.disabled = false;
-  submitBtn.innerHTML =
-    '<i class="fa-solid fa-paper-plane mr-2"></i> ยืนยันการจองตั๋วภาพยนตร์';
-
-  return;
-}
-
-
-            // Fill Confirmation Screen
-            document.getElementById('confirmed-booking-id').innerText = bookingId;
-            document.getElementById('confirmed-email').innerText = custEmail;
-            document.getElementById('confirmed-movie').innerText = selectedMovie.title;
-            document.getElementById('confirmed-datetime').innerText = `${selectedDate} เวลา ${selectedTime} น.`;
-            document.getElementById('confirmed-seats').innerText = selectedSeats.sort().join(', ');
-            document.getElementById('confirmed-amount').innerText = `${totalPrice.toLocaleString()} บาท`;
-
-            // Reset Form UI and Go to Success Step
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane mr-2"></i> ยืนยันการจองตั๋วภาพยนตร์`;
-
-            goToStep(4);
+                document.getElementById('confirmed-booking-id').innerText = bookingId;
+                document.getElementById('confirmed-email').innerText = custEmail;
+                document.getElementById('confirmed-movie').innerText = selectedMovie.title;
+                document.getElementById('confirmed-datetime').innerText = `${selectedDate} เวลา ${selectedTime} น.`;
+                document.getElementById('confirmed-seats').innerText = [...selectedSeats].sort().join(', ');
+                document.getElementById('confirmed-amount').innerText = `${totalPrice.toLocaleString()} บาท`;
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalButtonHtml;
+                goToStep(4);
+            } catch (error) {
+                console.error('Booking/Drive upload error:', error);
+                alert('บันทึกการจองไม่สำเร็จ: ' + (error.message || 'กรุณาตรวจสอบการเชื่อมต่อแล้วลองใหม่'));
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalButtonHtml;
+            }
         }
 
         /* ----------------------------------------------------
