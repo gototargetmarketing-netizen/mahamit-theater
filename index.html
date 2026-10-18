@@ -284,6 +284,101 @@
     #movie-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 18px !important; }
 }
 
+
+
+
+
+
+/* MAHAMIT THEATER - Loading Modal Theme */
+#bookingLoadingModal {
+  background: rgba(5, 5, 6, 0.86) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+#bookingLoadingModal .booking-loading-card {
+  box-sizing: border-box;
+  width: min(100%, 446px);
+  padding: 36px 26px 30px;
+  background: #171717 !important;
+  border: 1px solid #8b1528 !important;
+  border-top: 3px solid #d4af37 !important;
+  border-radius: 20px !important;
+  color: #f4f1ea !important;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6) !important;
+}
+
+#bookingLoadingModal .booking-loading-logo {
+  display: block;
+  width: auto;
+  max-width: 150px;
+  max-height: 85px;
+  object-fit: contain;
+  margin: 0 auto 28px;
+}
+
+#bookingLoadingModal .booking-loading-card h2 {
+  color: #d4af37 !important;
+  font-size: clamp(18px, 4.5vw, 24px);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+#bookingLoadingModal .booking-loading-card p {
+  color: #b5b1b7 !important;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+#bookingLoadingModal .booking-loading-icon {
+  background: #242124 !important;
+  border: 2px solid #d4af37 !important;
+  color: #d4af37 !important;
+  box-shadow: 0 0 24px rgba(139, 21, 40, 0.18);
+}
+
+#bookingLoadingModal .booking-loading-dots span {
+  background: #8b1528 !important;
+}
+
+@media (max-width: 480px) {
+  #bookingLoadingModal {
+    padding: 16px !important;
+  }
+
+  #bookingLoadingModal .booking-loading-card {
+    width: 100%;
+    max-width: 360px;
+    padding: 30px 20px 26px;
+    border-radius: 18px !important;
+  }
+
+  #bookingLoadingModal .booking-loading-logo {
+    max-width: 125px;
+    max-height: 72px;
+    margin-bottom: 24px;
+  }
+
+  #bookingLoadingModal .booking-loading-icon {
+    width: 68px;
+    height: 68px;
+    margin-bottom: 18px;
+  }
+
+  #bookingLoadingModal .booking-loading-icon svg {
+    width: 34px;
+    height: 34px;
+  }
+
+  #bookingLoadingModal .booking-loading-card p {
+    font-size: 13px;
+  }
+}
+
+
+
+
+        
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between selection:bg-brand-red selection:text-white">
@@ -1185,7 +1280,7 @@ function hideBookingLoading() {
   <div class="booking-loading-card">
     <!-- เปลี่ยน src ให้เป็น URL โลโก้เดิมของเว็บไซต์ -->
     <img class="booking-loading-logo"
-         src="ใส่_URL_โลโก้เดิมของเว็บไซต์"
+         src="./logo.png"
          alt="MAHAMIT THEATER">
 
     <div class="booking-loading-icon">
