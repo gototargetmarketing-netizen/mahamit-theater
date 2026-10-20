@@ -616,6 +616,72 @@
       height: 64px;
     }
   }
+
+
+
+/* MAHAMIT THEATER - SUCCESS SCREEN REFINEMENT */
+#step-4 .success-check-circle {
+    width: 82px !important;
+    height: 82px !important;
+    flex-shrink: 0;
+    color: #FFE38A;
+    font-size: 34px !important;
+    border: 3px solid #D4AF37;
+    background: radial-gradient(circle, #38240A, #080808 72%);
+    box-shadow:
+        0 0 18px rgba(212, 175, 55, 0.25),
+        inset 0 0 12px rgba(212, 175, 55, 0.12);
+}
+
+#step-4 .success-title {
+    font-size: clamp(26px, 3.5vw, 40px) !important;
+    line-height: 1.25 !important;
+    letter-spacing: -0.5px;
+    margin-bottom: 0;
+}
+
+/* Mobile */
+@media screen and (max-width: 640px) {
+    #step-4 .success-check-circle {
+        width: 68px !important;
+        height: 68px !important;
+        font-size: 28px !important;
+        border-width: 2px;
+        box-shadow: 0 0 14px rgba(212, 175, 55, 0.22);
+    }
+
+    #step-4 .success-title {
+        font-size: 28px !important;
+        line-height: 1.3 !important;
+        letter-spacing: -0.7px;
+    }
+
+    #step-4 .relative.z-10 {
+        padding: 20px 14px !important;
+    }
+
+    #step-4 .relative.z-10 > .text-center.mb-5 {
+        margin-bottom: 18px !important;
+    }
+
+    #step-4 #success-movie-poster {
+        max-width: 190px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+/* Desktop */
+@media screen and (min-width: 641px) {
+    #step-4 .success-check-circle {
+        width: 88px !important;
+        height: 88px !important;
+        font-size: 36px !important;
+    }
+}
+
+
+    
 </style>
 
 <div id="movieIntro" role="dialog"
@@ -1183,21 +1249,17 @@ function posterFallback(img) {
             </div>
 
             <!-- SUCCESS ICON -->
-            <div class="flex justify-center mb-5 print-hide">
-                <div class="w-24 h-24 sm:w-32 sm:h-32 rounded-full
-                            flex items-center justify-center text-5xl sm:text-6xl"
-                     style="color:#FFE38A;
-                     background:radial-gradient(circle,#38240A,#080808 72%);
-                     border:4px solid #D4AF37;
-                     box-shadow:0 0 25px rgba(212,175,55,.5),
-                     inset 0 0 15px rgba(212,175,55,.2);">
-                    <i class="fa-solid fa-check"></i>
-                </div>
+            <div class="flex justify-center mb-3 print-hide">
+
+<div class="success-check-circle rounded-full flex items-center justify-center">
+    <i class="fa-solid fa-check"></i>
+</div>
+
             </div>
 
             <!-- HEADING -->
-            <div class="text-center mb-8">
-                <h2 class="text-3xl sm:text-5xl font-bold leading-tight">
+            <div class="text-center mb-5">
+                <h2 class="success-title font-bold leading-tight">
                     <span class="text-[#FFD65A]">จองสำเร็จ</span><span class="text-white">แล้ว!</span>
                 </h2>
 
