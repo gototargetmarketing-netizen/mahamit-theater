@@ -369,6 +369,8 @@
             #step-4 .print-hide { display: none !important; }
             #step-4 .print-only { display: block !important; }
             #step-4 > div { padding: 18px !important; border-width: 1.5px !important; break-inside: avoid; page-break-inside: avoid; }
+            /* ปกถูกซ่อนตอนพิมพ์ ให้รายละเอียดกินเต็มความกว้าง ไม่เหลือช่องว่างฝั่งซ้าย */
+            #step-4 .success-details { grid-column: 1 / -1 !important; }
         }
 
         /* หน้าต่างแจ้งเตือนของเว็บ (ยกมาจาก customAlertModal ของคอนเสิร์ต ปรับเป็นธีมโรงหนัง)
@@ -1049,15 +1051,16 @@ function posterFallback(img) {
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div class="sm:col-span-2">
                                 <label class="block text-xs font-medium text-brand-lightGray mb-1">ชื่อ - นามสกุล <span class="text-brand-red">*</span></label>
-                                <input type="text" id="cust-name" required placeholder="นายเกรียงไกร มาหามิตร" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
+                                <input type="text" id="cust-name" required placeholder="กรอกชื่อและนามสกุล" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-brand-lightGray mb-1">อีเมล (สำหรับรับตั๋วเข้างาน) <span class="text-brand-red">*</span></label>
-                                <input type="email" id="cust-email" required placeholder="example@email.com" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
+                                <input type="email" id="cust-email" required placeholder="อีเมลสำหรับรับ QR เข้าชม" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-brand-lightGray mb-1">เบอร์โทรศัพท์ <span class="text-brand-red">*</span></label>
-                                <input type="tel" id="cust-phone" required placeholder="0812345678" pattern="[0-9]{9,10}" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
+                                <input type="tel" id="cust-phone" required placeholder="เบอร์มือถือ 10 หลัก" inputmode="numeric" maxlength="10" pattern="0[0-9]{9}" autocomplete="tel"
+                                    oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10)" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
                             </div>
                         </div>
 
@@ -1238,8 +1241,24 @@ function posterFallback(img) {
 
         <div class="relative z-10 p-4 sm:p-8 md:p-10">
 
+            <!-- PRINT HEADER: VISIBLE ON PAPER ONLY -->
+            <!-- อยู่บนสุดเพื่อให้คนที่ถือกระดาษเห็นก่อนอย่างอื่นว่าเป็นใบจอง ไม่ใช่บัตรเข้าชม (บัตรจริงคือ QR ในอีเมล) -->
+            <div class="print-only text-left"
+                 style="border-bottom:2px solid #111;padding-bottom:10px;margin-bottom:14px;">
+                <div style="font-size:22px;font-weight:700;letter-spacing:2px;">
+                    MAHAMIT THEATER
+                </div>
+                <div style="font-size:14px;margin-top:4px;">
+                    ใบจองตั๋วภาพยนตร์ (รอตรวจสอบการชำระเงิน) · ยังไม่ใช่บัตรเข้าชม
+                </div>
+                <div style="font-size:12px;margin-top:2px;">
+                    พิมพ์เมื่อ <span id="print-time"></span>
+                </div>
+            </div>
+
             <!-- LOGO / BRAND -->
-            <div class="text-center mb-7">
+            <!-- ตอนพิมพ์ซ่อนโลโก้ คำขอบคุณ ปก และท้ายการ์ด (หัวกระดาษบอกชื่อโรงแล้ว) ให้ใบจองจบใน 1 หน้า A4 -->
+            <div class="text-center mb-7 print-hide">
                 <p class="text-white text-xl sm:text-2xl font-bold tracking-widest">
                     MAHAMIT <span class="text-[#D4AF37]">THEATER</span>
                 </p>
@@ -1263,11 +1282,11 @@ function posterFallback(img) {
                     <span class="text-[#FFD65A]">จองสำเร็จ</span><span class="text-white">แล้ว!</span>
                 </h2>
 
-                <p class="text-white text-base sm:text-xl font-semibold mt-4">
+                <p class="text-white text-base sm:text-xl font-semibold mt-4 print-hide">
                     ขอบคุณที่ใช้บริการ มหามิตรเทียเตอร์
                 </p>
 
-                <p class="text-zinc-400 text-sm sm:text-base mt-2">
+                <p class="text-zinc-400 text-sm sm:text-base mt-2 print-hide">
                     เตรียมพบกับประสบการณ์ความบันเทิงที่ดีที่สุด
                 </p>
 
@@ -1287,7 +1306,7 @@ function posterFallback(img) {
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
 
                     <!-- MOVIE POSTER -->
-                    <div class="md:col-span-4 flex justify-center items-start">
+                    <div class="md:col-span-4 flex justify-center items-start print-hide">
                         <div class="w-44 sm:w-56 md:w-full max-w-[260px]">
                             <img id="success-movie-poster"
                                  src=""
@@ -1305,7 +1324,7 @@ function posterFallback(img) {
                     </div>
 
                     <!-- DETAILS -->
-                    <div class="md:col-span-8 min-w-0">
+                    <div class="md:col-span-8 min-w-0 success-details">
 
                         <p class="text-[#FFD65A] text-xs sm:text-sm font-bold tracking-widest mb-2">
                             BOOKING CONFIRMATION
@@ -1386,30 +1405,18 @@ function posterFallback(img) {
                 </div>
             </div>
 
-            <!-- PRINT HEADER: VISIBLE ON PAPER ONLY -->
-            <div class="print-only text-left"
-                 style="border-bottom:2px solid #111;padding-bottom:10px;">
-                <div style="font-size:22px;font-weight:700;letter-spacing:2px;">
-                    MAHAMIT THEATER
-                </div>
-                <div style="font-size:14px;margin-top:4px;">
-                    ใบจองตั๋วภาพยนตร์ (รอตรวจสอบการชำระเงิน) · ยังไม่ใช่บัตรเข้าชม
-                </div>
-                <div style="font-size:12px;margin-top:2px;">
-                    พิมพ์เมื่อ <span id="print-time"></span>
-                </div>
-            </div>
-
             <!-- ACTION BUTTONS -->
             <div class="print-hide grid grid-cols-1 sm:grid-cols-2 gap-3">
 
+                <!-- ผู้ใช้ขอเปลี่ยนจากพิมพ์/PDF เป็นบันทึกรูป (ลูกค้าส่วนใหญ่จองผ่านมือถือ) ส่วน @media print ยังอยู่ ถ้ากด Ctrl+P เองก็ได้ใบจองพื้นขาว -->
                 <button type="button"
-                        onclick="printBooking()"
+                        id="btn-save-booking-image"
+                        onclick="saveBookingImage()"
                         class="flex items-center justify-center gap-3 px-5 py-4 rounded-xl font-bold text-white transition"
                         style="background:linear-gradient(135deg,#303033,#171719);
                         border:1px solid #888;">
-                    <i class="fa-solid fa-print text-xl"></i>
-                    <span>พิมพ์ / บันทึก PDF</span>
+                    <i class="fa-solid fa-image text-xl"></i>
+                    <span>บันทึกใบจอง</span>
                 </button>
 
                 <button type="button"
@@ -1425,7 +1432,7 @@ function posterFallback(img) {
             </div>
 
             <!-- BRAND FOOTNOTE -->
-            <p class="text-center text-zinc-500 text-[10px] sm:text-xs mt-7 tracking-wider">
+            <p class="text-center text-zinc-500 text-[10px] sm:text-xs mt-7 tracking-wider print-hide">
                 MAHAMIT THEATER · CLASSIC &amp; MODERN CINEMA EXPERIENCE
             </p>
 
@@ -2091,7 +2098,250 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
             selectedMovie = null;
             selectedSeats = [];
             currentStep = 1;
+            clearBookingForm();
             goToStep(1);
+        }
+
+        /* ----------------------------------------------------
+         * บันทึกใบจองเป็นรูปภาพ (แทนปุ่มพิมพ์/PDF เดิม)
+         * วาดการ์ดสีแยกจากหน้าจอ (ขนาดพอดีจอมือถือ ไม่มีปุ่ม) แล้วถ่ายเป็น PNG ด้วย html2canvas
+         * ---------------------------------------------------- */
+        let lastBooking = null;
+        let bookingImageBlob = null;
+        let bookingImagePromise = null;
+        const HTML2CANVAS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+
+        // โหลดไลบรารีตอนจองสำเร็จเท่านั้น คนที่แค่เข้ามาดูหนังจะไม่ต้องโหลดไฟล์นี้ หน้าแรกจึงไม่ช้าลง
+        function loadHtml2Canvas() {
+            if (window.html2canvas) return Promise.resolve(window.html2canvas);
+            if (loadHtml2Canvas.promise) return loadHtml2Canvas.promise;
+            loadHtml2Canvas.promise = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = HTML2CANVAS_URL;
+                script.onload = () => resolve(window.html2canvas);
+                script.onerror = () => { loadHtml2Canvas.promise = null; reject(new Error('โหลดตัวสร้างรูปไม่สำเร็จ')); };
+                document.head.appendChild(script);
+            });
+            return loadHtml2Canvas.promise;
+        }
+
+        // แปลงปกเป็น data URL ก่อนใส่ในรูป ถ้าปกมาจากเว็บอื่นที่ไม่อนุญาต (เช่นบางไฟล์ใน Google Drive)
+        // เบราว์เซอร์จะไม่ยอมให้บันทึกรูปทั้งใบ จึงตรวจตรงนี้ก่อน ใช้ไม่ได้ = ใช้กรอบชื่อเรื่องแทนปก
+        function posterDataUrl(src) {
+            return new Promise(resolve => {
+                if (!src) { resolve(null); return; }
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.referrerPolicy = 'no-referrer';
+                const timer = setTimeout(() => resolve(null), 8000);
+                img.onload = () => {
+                    clearTimeout(timer);
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.naturalWidth;
+                        canvas.height = img.naturalHeight;
+                        canvas.getContext('2d').drawImage(img, 0, 0);
+                        resolve(canvas.toDataURL('image/jpeg', 0.9));
+                    } catch (err) {
+                        resolve(null);
+                    }
+                };
+                img.onerror = () => { clearTimeout(timer); resolve(null); };
+                img.src = src;
+            });
+        }
+
+        // 2026-10-25 → วันอาทิตย์ที่ 25 ต.ค. 2569 (เหมือน formatThaiDate_ ใน Code.gs)
+        function thaiDateText(value) {
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || '');
+            if (!m) return value || '';
+            const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+            const days = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+            const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+            return 'วัน' + days[d.getDay()] + 'ที่ ' + Number(m[3]) + ' ' + months[Number(m[2]) - 1] + ' ' + (Number(m[1]) + 543);
+        }
+
+        // การ์ดสำหรับถ่ายเป็นรูป: ใช้ style ในตัวทั้งหมด (ไม่พึ่ง Tailwind) หน้าตาจะเหมือนกันทุกเครื่อง
+        // ห้ามใส่ letter-spacing กับข้อความภาษาไทย html2canvas จะวางสระ/วรรณยุกต์เพี้ยน
+        function bookingImageHtml(b, poster) {
+            const gold = '#D4AF37', light = '#FFD65A';
+            const row = (icon, label, value, color) => `
+                <div style="display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px solid rgba(212,175,55,.22);">
+                    <div style="width:26px;text-align:center;color:${gold};font-size:18px;padding-top:2px;"><i class="fa-solid ${icon}"></i></div>
+                    <div style="width:118px;color:#a1a1aa;font-size:17px;">${label}</div>
+                    <div style="flex:1;min-width:0;color:${color || '#fff'};font-size:18px;font-weight:600;line-height:1.5;word-break:break-word;">${value}</div>
+                </div>`;
+            const posterBox = poster
+                ? `<div style="width:210px;height:315px;margin:0 auto;border-radius:16px;border:3px solid ${gold};
+                        background:#111 url('${poster}') center/cover no-repeat;box-shadow:0 14px 34px rgba(0,0,0,.6);"></div>`
+                : `<div style="width:210px;height:315px;margin:0 auto;border-radius:16px;border:3px solid ${gold};
+                        background:linear-gradient(160deg,#3a0d16,#0b0b0d);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;text-align:center;">
+                        <i class="fa-solid fa-film" style="color:${gold};font-size:46px;margin-bottom:16px;"></i>
+                        <div style="color:#fff;font-size:22px;font-weight:700;line-height:1.35;word-break:break-word;">${escapeHtml(b.movie)}</div>
+                   </div>`;
+            const meta = [b.genre, b.duration].filter(Boolean).map(escapeHtml).join(' · ');
+            return `
+            <div style="width:540px;font-family:'Prompt',sans-serif;color:#fff;border-radius:28px;overflow:hidden;
+                    border:3px solid ${gold};
+                    background:radial-gradient(ellipse at 50% 0%, rgba(139,21,40,.55), transparent 58%), linear-gradient(180deg,#14090b 0%,#09090a 62%,#1a080c 100%);">
+                <div style="height:5px;background:linear-gradient(90deg,transparent,${gold},#FFF0A6,${gold},transparent);"></div>
+                <div style="padding:30px 34px 28px;">
+                    <div style="text-align:center;">
+                        <div style="font-size:30px;font-weight:700;letter-spacing:5px;">MAHAMIT <span style="color:${gold};">THEATER</span></div>
+                        <div style="font-size:11px;color:#a1a1aa;letter-spacing:4px;margin-top:6px;">CLASSIC &amp; MODERN CINEMA EXPERIENCE</div>
+                        <div style="display:inline-block;margin-top:18px;padding:7px 18px;border-radius:999px;border:1px solid ${gold};
+                                background:rgba(212,175,55,.12);color:${light};font-size:15px;font-weight:600;">
+                            <i class="fa-solid fa-hourglass-half" style="margin-right:6px;"></i>ใบจอง · รอตรวจสอบการชำระเงิน
+                        </div>
+                    </div>
+                    <div style="margin-top:24px;">${posterBox}</div>
+                    <div style="text-align:center;margin-top:20px;">
+                        <div style="font-size:28px;font-weight:700;line-height:1.3;word-break:break-word;">${escapeHtml(b.movie)}</div>
+                        ${meta ? `<div style="font-size:15px;color:#a1a1aa;margin-top:6px;">${meta}</div>` : ''}
+                    </div>
+                    <div style="margin-top:20px;padding:6px 20px 4px;border-radius:18px;background:rgba(15,15,17,.92);border:1px solid rgba(212,175,55,.75);">
+                        ${row('fa-ticket', 'เลขที่การจอง', escapeHtml(b.bookingId), light)}
+                        ${row('fa-user', 'ชื่อผู้จอง', escapeHtml(b.name))}
+                        ${row('fa-calendar-days', 'วันฉาย', escapeHtml(thaiDateText(b.date)))}
+                        ${row('fa-clock', 'รอบฉาย', escapeHtml(b.time) + ' น.')}
+                        ${row('fa-couch', 'ที่นั่ง', escapeHtml(b.seats.join(', ')) + ` <span style="color:#a1a1aa;font-weight:400;font-size:15px;">(${b.seats.length} ที่นั่ง)</span>`, light)}
+                        <div style="display:flex;align-items:flex-start;gap:14px;padding:16px 0 14px;">
+                            <div style="width:26px;text-align:center;color:${gold};font-size:18px;padding-top:6px;"><i class="fa-solid fa-money-bill-wave"></i></div>
+                            <div style="width:118px;color:#a1a1aa;font-size:17px;padding-top:4px;">ยอดชำระ</div>
+                            <div style="flex:1;">
+                                <div style="color:${light};font-size:28px;font-weight:700;line-height:1.2;">${Number(b.amount).toLocaleString()} บาท</div>
+                                ${b.discountText ? `<div style="color:#34d399;font-size:14px;margin-top:4px;">${escapeHtml(b.discountText)}</div>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top:18px;padding:14px 16px;border-radius:14px;background:rgba(139,21,40,.25);border:1px solid rgba(212,175,55,.45);
+                            display:flex;gap:12px;align-items:flex-start;">
+                        <i class="fa-solid fa-circle-info" style="color:${light};font-size:20px;padding-top:3px;"></i>
+                        <div style="font-size:14px;line-height:1.7;color:#e4e4e7;">
+                            <b style="color:${light};">ใบจองนี้ยังไม่ใช่บัตรเข้าชม</b><br>
+                            QR Code เข้าชมจะส่งทางอีเมล<br>หลังแอดมินตรวจสอบการชำระเงินแล้ว
+                        </div>
+                    </div>
+                    <div style="text-align:center;font-size:11px;color:#71717a;letter-spacing:3px;margin-top:22px;">MAHAMIT THEATER</div>
+                </div>
+            </div>`;
+        }
+
+        // สร้างรูปครั้งเดียวต่อการจอง (กดปุ่มซ้ำใช้รูปเดิม)
+        function prepareBookingImage() {
+            if (!lastBooking) return Promise.reject(new Error('ไม่พบข้อมูลการจอง'));
+            if (bookingImageBlob) return Promise.resolve(bookingImageBlob);
+            if (bookingImagePromise) return bookingImagePromise;
+            const booking = lastBooking;
+            // ปกที่แสดงบนหน้าจอเปิดได้แล้ว (posterFallback อาจสลับ .jpg/.png ให้) ใช้ที่อยู่นั้นก่อน
+            const shown = document.getElementById('success-movie-poster');
+            const posterSrc = (shown && shown.complete && shown.naturalWidth && shown.currentSrc) || booking.poster;
+            bookingImagePromise = Promise.all([loadHtml2Canvas(), posterDataUrl(posterSrc), document.fonts ? document.fonts.ready : null])
+                .then(([html2canvas, poster]) => {
+                    const holder = document.createElement('div');
+                    // วางไว้นอกจอ ลูกค้าไม่เห็น แต่เบราว์เซอร์ยังจัดหน้าให้ถ่ายรูปได้
+                    holder.style.cssText = 'position:fixed;left:-10000px;top:0;z-index:-1;';
+                    holder.innerHTML = bookingImageHtml(booking, poster);
+                    document.body.appendChild(holder);
+                    return html2canvas(holder.firstElementChild, { scale: 2, backgroundColor: null, useCORS: true, logging: false })
+                        .finally(() => holder.remove());
+                })
+                .then(canvas => new Promise((resolve, reject) =>
+                    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('สร้างรูปไม่สำเร็จ')), 'image/png')))
+                .then(blob => {
+                    // ลูกค้ากดกลับหน้าแรกไปจองใหม่ระหว่างสร้างรูป: ไม่เก็บรูปของการจองเก่า
+                    if (lastBooking === booking) bookingImageBlob = blob;
+                    return blob;
+                })
+                .finally(() => { bookingImagePromise = null; });
+            return bookingImagePromise;
+        }
+
+        async function saveBookingImage() {
+            const btn = document.getElementById('btn-save-booking-image');
+            const label = btn.querySelector('span');
+            if (!lastBooking) return;
+            const fileName = 'ใบจอง-' + lastBooking.bookingId + '.png';
+            let blob = bookingImageBlob;
+            if (!blob) {
+                btn.disabled = true;
+                label.textContent = 'กำลังสร้างรูป…';
+                try {
+                    blob = await prepareBookingImage();
+                } catch (err) {
+                    console.error('Booking image error:', err);
+                    alert('บันทึกใบจองไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่ หรือแคปหน้าจอนี้ไว้แทน');
+                    return;
+                } finally {
+                    btn.disabled = false;
+                    label.textContent = 'บันทึกใบจอง';
+                }
+            }
+            // แยกตามเครื่อง (ผู้ใช้ขอ 20 ต.ค. 2569) เพราะแต่ละระบบบันทึกรูปลงคลังรูปได้ต่างกัน
+            // • ในแอป LINE/Facebook/IG: หน้าแชร์และการดาวน์โหลดมักใช้ไม่ได้ → แสดงรูปเต็มจอให้กดค้าง
+            // • iPhone/iPad: หน้าแชร์มี "บันทึกรูปภาพ" เข้าแอปรูปภาพตรงๆ (ดาวน์โหลดจะไปอยู่ในแอปไฟล์ ลูกค้าหาไม่เจอ)
+            // • Android: หน้าแชร์ส่วนใหญ่ไม่มีปุ่มบันทึกลงแกลเลอรี → ดาวน์โหลดตรงๆ ไฟล์เข้า Download และขึ้นในแกลเลอรี
+            // • คอมพิวเตอร์: ดาวน์โหลดเป็นไฟล์
+            const ua = navigator.userAgent || '';
+            const inAppBrowser = /\bLine\/|FBAN|FBAV|FB_IAB|Instagram/i.test(ua);
+            const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            if (inAppBrowser) { showBookingImagePreview(blob); return; }
+            if (isIOS) {
+                const file = new File([blob], fileName, { type: 'image/png' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({ files: [file], title: 'ใบจอง MAHAMIT THEATER' });
+                    } catch (err) {
+                        // ลูกค้ากดปิดหน้าแชร์เอง ไม่ต้องทำอะไร / เปิดหน้าแชร์ไม่ได้ ให้กดค้างที่รูปแทน
+                        if (!err || err.name !== 'AbortError') showBookingImagePreview(blob);
+                    }
+                } else {
+                    showBookingImagePreview(blob);
+                }
+                return;
+            }
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(() => { URL.revokeObjectURL(url); link.remove(); }, 1500);
+        }
+
+        // ทางสำรองบนมือถือ: แสดงรูปเต็มจอ ให้กดค้างที่รูปแล้วเลือก "บันทึกรูปภาพ"
+        function showBookingImagePreview(blob) {
+            const url = URL.createObjectURL(blob);
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:14px;';
+            overlay.innerHTML = `
+                <p style="color:#FFD65A;font-size:15px;text-align:center;margin:0;">กดค้างที่รูป แล้วเลือก "บันทึกรูปภาพ"</p>
+                <img src="${url}" alt="ใบจอง" style="max-width:100%;max-height:78vh;border-radius:16px;">
+                <button type="button" style="background:#8b1528;color:#fff;border:1px solid #D4AF37;border-radius:12px;padding:10px 28px;font-weight:700;">ปิด</button>`;
+            overlay.querySelector('button').onclick = () => { overlay.remove(); URL.revokeObjectURL(url); };
+            document.body.appendChild(overlay);
+        }
+
+        // ล้างข้อมูลการจองครั้งก่อนให้เหมือนเพิ่งเปิดเว็บ (ผู้ใช้ขอ: จองเสร็จแล้วกลับหน้าแรก ข้อมูลเก่าต้องไม่ค้าง)
+        // ยังช่วยกรณีใช้เครื่องร่วมกัน คนถัดไปจะไม่เห็นชื่อ เบอร์ และสลิปของคนก่อน
+        // วันเวลาโอนไม่ต้องล้าง เพราะ setDefaultPaymentTime ตั้งเป็น "ตอนนี้" ใหม่ทุกครั้งที่เข้าขั้นชำระเงิน
+        function clearBookingForm() {
+            ['cust-name', 'cust-email', 'cust-phone', 'payment-slip', 'discountCodeInput'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            document.querySelectorAll('.field-invalid').forEach(el => el.classList.remove('field-invalid'));
+            document.getElementById('pdpaConsent').checked = false;
+            appliedDiscount = null;
+            showDiscountMessage('', '');
+            renderDiscountControls();
+            const first = firstBookableDate();
+            const dateInput = document.getElementById('booking-date');
+            dateInput.min = first;
+            dateInput.value = first;
+            selectedDate = first;
+            selectedTime = '';
+            lastBooking = null;
+            bookingImageBlob = null;
         }
 
         /* ----------------------------------------------------
@@ -2228,9 +2478,10 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value('cust-email'))) {
                 invalid.push({ id: 'cust-email', label: 'อีเมล', message: 'กรุณากรอกอีเมลให้ถูกต้อง เช่น yourname@email.com' });
             }
-            // ต้องตรงกับ cleanPhone_ ใน Code.gs (มือถือ 10 หลัก / เบอร์บ้าน 9 หลัก ขึ้นต้นด้วย 0)
-            if (!/^0\d{8,9}$/.test(value('cust-phone').replace(/[\s-]/g, ''))) {
-                invalid.push({ id: 'cust-phone', label: 'เบอร์โทรศัพท์', message: 'กรุณากรอกเบอร์โทรศัพท์เป็นตัวเลข 9–10 หลัก ขึ้นต้นด้วย 0' });
+            // ต้องตรงกับ cleanPhone_ ใน Code.gs (เบอร์มือถือ 10 หลัก ขึ้นต้นด้วย 0 ตามที่ผู้ใช้ตัดสินใจ)
+            // ช่องเบอร์ตัดตัวที่ไม่ใช่ตัวเลขและจำกัด 10 ตัวตอนพิมพ์แล้ว ตรงนี้กันกรณีกรอกไม่ครบ
+            if (!/^0\d{9}$/.test(value('cust-phone').replace(/[\s-]/g, ''))) {
+                invalid.push({ id: 'cust-phone', label: 'เบอร์โทรศัพท์', message: 'กรุณากรอกเบอร์โทรศัพท์มือถือให้ครบ 10 หลัก ขึ้นต้นด้วย 0' });
             }
             // พิมพ์โค้ดไว้แต่ยังไม่ได้กด "ใช้โค้ด" ยอดที่แสดงจึงยังไม่ได้หักส่วนลด
             if (value('discountCodeInput') && !appliedDiscount) {
@@ -2288,6 +2539,9 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
                 const custPhone = document.getElementById('cust-phone').value.trim();
                 const payDate = document.getElementById('pay-date').value;
                 const payTime = document.getElementById('pay-time').value;
+                // จำที่นั่งไว้ตั้งแต่ตอนกดส่ง: หลังจองสำเร็จ loadBookedSeatsForCurrentSlot จะตัดที่นั่งที่ "ถูกจองแล้ว"
+                // ออกจาก selectedSeats ซึ่งก็คือที่นั่งของลูกค้าคนนี้เอง หน้าจองสำเร็จจึงเคยแสดงช่องที่นั่งว่าง
+                const bookedSeats = [...selectedSeats].sort();
                 const subtotal = selectedSeats.length * TICKET_PRICE;
                 const discount = discountAmountFor(appliedDiscount, selectedSeats.length, subtotal);
                 const totalPrice = subtotal - discount;
@@ -2359,12 +2613,27 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
                 document.getElementById('confirmed-movie').innerText = selectedMovie.title;
                 document.getElementById('success-movie-poster').src = selectedMovie.poster;
                 document.getElementById('confirmed-datetime').innerText = `${selectedDate} เวลา ${selectedTime} น.`;
-                document.getElementById('confirmed-seats').innerText = [...selectedSeats].sort().join(', ');
+                document.getElementById('confirmed-seats').innerText = bookedSeats.join(', ');
                 document.getElementById('confirmed-amount').innerText = `${totalPrice.toLocaleString()} บาท`;
                 document.getElementById('confirmed-discount').innerText = discount > 0
                     ? `(ใช้โค้ด ${appliedDiscount.code} ลด ${discount.toLocaleString()} บาท)` : '';
                 document.getElementById('confirmed-name').innerText = custName;
                 document.getElementById('confirmed-phone').innerText = custPhone;
+                // ถ้าลูกค้ากด Ctrl+P เอง หัวกระดาษจะมีเวลา (เดิมตั้งตอนกดปุ่มพิมพ์ ซึ่งเปลี่ยนเป็นปุ่มบันทึกใบจองแล้ว)
+                document.getElementById('print-time').textContent = new Date().toLocaleString('th-TH');
+                lastBooking = {
+                    bookingId: bookingId,
+                    movie: selectedMovie.title,
+                    genre: selectedMovie.genre || '',
+                    duration: selectedMovie.duration || '',
+                    poster: selectedMovie.poster || '',
+                    date: selectedDate,
+                    time: selectedTime,
+                    seats: bookedSeats,
+                    name: custName,
+                    amount: totalPrice,
+                    discountText: discount > 0 ? `ใช้โค้ด ${appliedDiscount.code} ลด ${discount.toLocaleString()} บาท` : ''
+                };
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalButtonHtml;
                 // จองรายการถัดไปต้องติ๊กยินยอมใหม่ และกรอกโค้ดส่วนลดใหม่
@@ -2375,6 +2644,9 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
                 renderDiscountControls();
                 hideBookingLoading();
                 goToStep(4);
+                // สร้างรูปใบจองรอไว้เลย พอลูกค้ากดปุ่มจะเปิดหน้าแชร์ได้ทันที
+                // (iPhone ไม่ยอมเปิดหน้าแชร์ถ้าหลังกดปุ่มต้องรอสร้างรูปนานเกินไป)
+                prepareBookingImage().catch(err => console.warn('Prepare booking image failed:', err));
             } catch (error) {
                 console.error('Booking/Drive upload error:', error);
                 // Always close the loading overlay and restore the button before showing the alert.
