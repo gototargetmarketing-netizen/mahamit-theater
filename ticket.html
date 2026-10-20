@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0f0f10">
+    <!-- หน้าบัตรของลูกค้าแต่ละคน ไม่ให้ Google เก็บไปแสดงในผลค้นหา -->
+    <meta name="robots" content="noindex">
+    <title>บัตรเข้าชม | MAHAMIT THEATER</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- QR Code Generator (MIT) สร้าง QR ในมือถือเอง ไม่ต้องเรียก Apps Script (ตัวเดียวกับคอนเสิร์ต) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <style>
+        :root {
+            --dark: #0f0f10;
+            --card: #18181b;
+            --red: #8b1528;
+            --gold: #d4af37;
+            --cream: #f4f1ea;
+            --line: #2a2a2e;
+            --muted: #a1a1aa;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            background: var(--dark);
+            color: var(--cream);
+            font-family: "Prompt", Arial, sans-serif;
+        }
+        header {
+            text-align: center;
+            padding: 26px 16px 22px;
+            border-bottom: 3px solid var(--red);
+            background: linear-gradient(180deg, #19191c 0%, #0f0f10 100%);
+        }
+        .brand { font-size: 12px; letter-spacing: 5px; font-weight: 600; color: var(--gold); }
+        .title { font-size: 26px; font-weight: 700; letter-spacing: 3px; margin-top: 4px; }
+        main { max-width: 520px; margin: 0 auto; padding: 20px 16px 40px; }
+        .summary {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-left: 4px solid var(--gold);
+            border-radius: 16px;
+            padding: 16px 18px;
+            margin-bottom: 16px;
+        }
+        .movie { font-size: 22px; font-weight: 700; color: var(--gold); line-height: 1.3; }
+        .when { font-size: 16px; margin-top: 4px; }
+        .label { font-size: 12px; color: var(--muted); margin-top: 12px; }
+        .value { font-size: 16px; font-weight: 600; word-break: break-all; }
+        .tip { font-size: 14px; line-height: 1.6; color: var(--muted); text-align: center; margin: 0 0 16px; }
+        .ticket {
+            background: #fff;
+            color: #1a1a1a;
+            border-radius: 20px;
+            padding: 20px 16px 18px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .seat { font-size: 30px; font-weight: 700; line-height: 1.1; margin-bottom: 12px; }
+        .qr { width: min(78vw, 300px); margin: 0 auto; }
+        .qr svg { display: block; width: 100%; height: auto; }
+        .share {
+            margin-top: 14px;
+            border: 1px solid var(--red);
+            background: #fff;
+            color: var(--red);
+            font: inherit;
+            font-size: 15px;
+            font-weight: 600;
+            padding: 10px 22px;
+            border-radius: 999px;
+            cursor: pointer;
+        }
+        .error {
+            background: #2a1216;
+            border-left: 4px solid var(--red);
+            border-radius: 0 12px 12px 0;
+            padding: 16px 18px;
+            line-height: 1.7;
+        }
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 24px;
+            transform: translateX(-50%);
+            background: var(--red);
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 999px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity .2s;
+            pointer-events: none;
+        }
+        .toast.show { opacity: 1; }
+        footer { text-align: center; font-size: 11px; letter-spacing: 3px; color: var(--muted); padding-bottom: 24px; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="brand">MAHAMIT</div>
+        <div class="title">THEATER</div>
+    </header>
+    <main id="app"></main>
+    <div class="toast" id="toast"></div>
+    <footer>CLASSIC &amp; MODERN CINEMA EXPERIENCE</footer>
+    <script>
+        // ต้องตรงกับ QR_PREFIX ใน Code.gs (หน้าสแกนอ่านรูปแบบ MT1|เลขจอง|ที่นั่ง|รหัสลับ)
+        const QR_PREFIX = 'MT1';
+
+        function esc(value) {
+            return String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        // ลิงก์จากอีเมล (ticketLink_ ใน Code.gs):
+        // ticket.html#r=เลขจอง&n=ชื่อผู้จอง&m=ชื่อหนัง&d=วันฉาย&t=รอบ&s=A1.รหัสลับ,A2.รหัสลับ
+        // ข้อมูลอยู่หลัง # จึงไม่ถูกส่งไปที่เซิร์ฟเวอร์ และหน้านี้ไม่ต้องเรียก Apps Script
+        function readTicketData() {
+            const params = new URLSearchParams(location.hash.slice(1));
+            const seats = (params.get('s') || '').split(',').map(item => {
+                const [seat, token] = item.split('.');
+                return { seat, token };
+            }).filter(t => /^[A-Z]\d{1,2}$/.test(t.seat || '') && /^[A-Za-z0-9_-]{16}$/.test(t.token || ''));
+            return {
+                bookingId: (params.get('r') || '').trim(),
+                name: (params.get('n') || '').trim(),
+                movie: (params.get('m') || '').trim(),
+                date: (params.get('d') || '').trim(),
+                time: (params.get('t') || '').trim(),
+                seats: seats
+            };
+        }
+
+        // 2026-10-25 → วันอาทิตย์ที่ 25 ต.ค. 2569 (เหมือน formatThaiDate_ ใน Code.gs)
+        function formatThaiDate(value) {
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+            if (!m) return value;
+            const date = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+            const days = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+            const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+            return 'วัน' + days[date.getDay()] + 'ที่ ' + Number(m[3]) + ' ' + months[Number(m[2]) - 1] + ' ' + (Number(m[1]) + 543);
+        }
+
+        function qrSvg(text) {
+            const qr = qrcode(0, 'M');
+            qr.addData(text);
+            qr.make();
+            return qr.createSvgTag({ cellSize: 8, margin: 4, scalable: true });
+        }
+
+        // ลิงก์สำหรับส่ง QR ที่นั่งเดียวให้เพื่อน (เพื่อนเห็นแค่ที่นั่งของตัวเอง)
+        function seatLink(data, ticket) {
+            return location.origin + location.pathname +
+                '#r=' + encodeURIComponent(data.bookingId) +
+                '&n=' + encodeURIComponent(data.name) +
+                '&m=' + encodeURIComponent(data.movie) +
+                '&d=' + encodeURIComponent(data.date) +
+                '&t=' + encodeURIComponent(data.time) +
+                '&s=' + ticket.seat + '.' + ticket.token;
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            clearTimeout(showToast.timer);
+            showToast.timer = setTimeout(() => toast.classList.remove('show'), 2200);
+        }
+
+        async function shareSeat(index) {
+            const ticket = ticketData.seats[index];
+            const url = seatLink(ticketData, ticket);
+            const text = `บัตรเข้าชม ${ticketData.movie} ที่นั่ง ${ticket.seat} | MAHAMIT THEATER`;
+            try {
+                if (navigator.share) {
+                    await navigator.share({ title: text, text: text, url: url });
+                    return;
+                }
+                await navigator.clipboard.writeText(url);
+                showToast('คัดลอกลิงก์แล้ว ส่งให้เพื่อนได้เลย');
+            } catch (err) {
+                // ผู้ใช้กดยกเลิกการแชร์ ไม่ต้องแจ้งอะไร
+                if (err && err.name === 'AbortError') return;
+                prompt('คัดลอกลิงก์นี้ส่งให้เพื่อน', url);
+            }
+        }
+
+        function render(data) {
+            const app = document.getElementById('app');
+            if (!data.bookingId || !data.seats.length) {
+                app.innerHTML = `<div class="error"><b>ไม่พบข้อมูลบัตรเข้าชม</b><br>
+                    กรุณาเปิดลิงก์จากอีเมลยืนยันการจองอีกครั้ง หรือติดต่อโรงภาพยนตร์พร้อมเลขจอง</div>`;
+                return;
+            }
+            if (typeof qrcode !== 'function') {
+                app.innerHTML = `<div class="error"><b>โหลดตัวสร้าง QR ไม่สำเร็จ</b><br>
+                    กรุณาตรวจสอบอินเทอร์เน็ตแล้วรีเฟรชหน้านี้ หรือใช้ QR ในอีเมลแทน</div>`;
+                return;
+            }
+            const summary = `
+                <div class="summary">
+                    ${data.movie ? `<div class="movie">${esc(data.movie)}</div>` : ''}
+                    ${data.date ? `<div class="when">${esc(formatThaiDate(data.date))}${data.time ? ` · รอบ ${esc(data.time)} น.` : ''}</div>` : ''}
+                    ${data.name ? `<div class="label">ชื่อผู้จอง</div><div class="value">${esc(data.name)}</div>` : ''}
+                    <div class="label">เลขจอง</div><div class="value">${esc(data.bookingId)}</div>
+                    <div class="label">จำนวน</div><div class="value">${data.seats.length} ที่นั่ง</div>
+                </div>
+                <p class="tip">แสดง QR ที่หน้าโรงภาพยนตร์<br>1 QR ต่อ 1 ที่นั่ง · กรุณาเพิ่มความสว่างหน้าจอ</p>`;
+            const tickets = data.seats.map((t, i) => {
+                const payload = [QR_PREFIX, data.bookingId, t.seat, t.token].join('|');
+                return `
+                    <section class="ticket">
+                        <div class="seat">ที่นั่ง ${esc(t.seat)}</div>
+                        <div class="qr" aria-label="QR ที่นั่ง ${esc(t.seat)}">${qrSvg(payload)}</div>
+                        ${data.seats.length > 1 ? `<button class="share" type="button" onclick="shareSeat(${i})">แชร์ที่นั่งนี้ให้เพื่อน</button>` : ''}
+                    </section>`;
+            }).join('');
+            app.innerHTML = summary + tickets;
+        }
+
+        let ticketData = readTicketData();
+        render(ticketData);
+        window.addEventListener('hashchange', () => {
+            ticketData = readTicketData();
+            render(ticketData);
+        });
+    </script>
+</body>
+</html>
