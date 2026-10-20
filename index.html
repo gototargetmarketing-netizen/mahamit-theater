@@ -1156,54 +1156,222 @@ function posterFallback(img) {
             </div>
         </section>
 
-        <!-- SUCCESS MODAL / CONFIRMATION SCREEN -->
-        <section id="step-4" class="hidden max-w-2xl mx-auto">
-            <div class="bg-brand-card rounded-2xl border-2 border-brand-gold/60 p-8 text-center space-y-6 shadow-2xl relative overflow-hidden">
-                <!-- หัวกระดาษตอนพิมพ์: บอกชัดว่าเป็นใบจอง ไม่ใช่บัตรเข้าชม (บัตรจริงคือ QR ในอีเมลหลังแอดมินยืนยัน) -->
-                <div class="print-only text-left" style="border-bottom:2px solid #111;padding-bottom:10px;">
-                    <div style="font-size:22px;font-weight:700;letter-spacing:2px;">MAHAMIT THEATER</div>
-                    <div style="font-size:14px;margin-top:4px;">ใบจองตั๋วภาพยนตร์ (รอตรวจสอบการชำระเงิน) · ยังไม่ใช่บัตรเข้าชม</div>
-                    <div style="font-size:12px;margin-top:2px;">พิมพ์เมื่อ <span id="print-time"></span></div>
-                </div>
-                <div class="print-hide w-20 h-20 bg-emerald-950/80 text-emerald-400 border-2 border-emerald-500 rounded-full flex items-center justify-center mx-auto text-3xl shadow-lg">
+
+<!-- MAHAMIT THEATER - PREMIUM BOOKING SUCCESS -->
+<section id="step-4" class="hidden max-w-5xl mx-auto">
+
+    <div class="relative overflow-hidden rounded-3xl border-2 border-[#D4AF37] shadow-2xl"
+         style="background:
+         radial-gradient(ellipse at 50% 0%, rgba(139,21,40,.38), transparent 55%),
+         linear-gradient(180deg,#100809 0%,#080808 65%,#18090c 100%);">
+
+        <!-- แสงตกแต่งด้านบน -->
+        <div class="absolute inset-x-0 top-0 h-1"
+             style="background:linear-gradient(90deg,transparent,#D4AF37,#FFF0A6,#D4AF37,transparent);">
+        </div>
+
+        <div class="relative z-10 p-4 sm:p-8 md:p-10">
+
+            <!-- LOGO / BRAND -->
+            <div class="text-center mb-7">
+                <p class="text-white text-xl sm:text-2xl font-bold tracking-widest">
+                    MAHAMIT <span class="text-[#D4AF37]">THEATER</span>
+                </p>
+                <p class="text-zinc-400 text-[10px] sm:text-xs tracking-[0.2em] mt-2">
+                    CLASSIC &amp; MODERN CINEMA EXPERIENCE
+                </p>
+            </div>
+
+            <!-- SUCCESS ICON -->
+            <div class="flex justify-center mb-5 print-hide">
+                <div class="w-24 h-24 sm:w-32 sm:h-32 rounded-full
+                            flex items-center justify-center text-5xl sm:text-6xl"
+                     style="color:#FFE38A;
+                     background:radial-gradient(circle,#38240A,#080808 72%);
+                     border:4px solid #D4AF37;
+                     box-shadow:0 0 25px rgba(212,175,55,.5),
+                     inset 0 0 15px rgba(212,175,55,.2);">
                     <i class="fa-solid fa-check"></i>
                 </div>
+            </div>
 
-                <div class="space-y-2">
-                    <h2 class="text-2xl sm:text-3xl font-bold text-white font-classic">ส่งข้อมูลการจองสำเร็จแล้ว!</h2>
-                    <p class="text-brand-gold font-medium text-sm">เลขที่รายการสั่งซื้อ: <span id="confirmed-booking-id" class="font-mono underline">#MT-0000</span></p>
-                </div>
+            <!-- HEADING -->
+            <div class="text-center mb-8">
+                <h2 class="text-3xl sm:text-5xl font-bold leading-tight">
+                    <span class="text-[#FFD65A]">จองสำเร็จ</span><span class="text-white">แล้ว!</span>
+                </h2>
 
-                <div class="bg-zinc-900/90 p-6 rounded-xl border border-zinc-800 text-left text-sm space-y-3">
-                    <div class="flex items-start space-x-3 text-amber-300 bg-amber-950/30 p-3 rounded border border-amber-800/50">
-                        <i class="fa-solid fa-envelope-circle-check text-xl mt-0.5"></i>
-                        <div>
-                            <p class="font-bold text-xs uppercase tracking-wider">ระบบกำลังรอการตรวจสอบจากแอดมิน</p>
-                            <p class="text-xs text-amber-200/80 mt-0.5">ระบบได้รับข้อมูลและสลิปรายละเอียดของท่านแล้ว แอดมินจะทำการตรวจสอบยอดเงิน จากนั้นจะจัดส่ง <b class="text-white">QR Code สำหรับเข้าชม</b> ให้ท่านผ่านทางอีเมล <span id="confirmed-email" class="text-white font-semibold"></span> โดยเร็วที่สุด</p>
+                <p class="text-white text-base sm:text-xl font-semibold mt-4">
+                    ขอบคุณที่ใช้บริการ มหามิตรเทียเตอร์
+                </p>
+
+                <p class="text-zinc-400 text-sm sm:text-base mt-2">
+                    เตรียมพบกับประสบการณ์ความบันเทิงที่ดีที่สุด
+                </p>
+
+                <p class="text-[#D4AF37] text-sm mt-4">
+                    เลขที่การจอง:
+                    <span id="confirmed-booking-id"
+                          class="font-bold font-mono">#MT-0000</span>
+                </p>
+            </div>
+
+            <!-- BOOKING DETAILS CARD -->
+            <div class="rounded-2xl p-4 sm:p-6 md:p-8 mb-5"
+                 style="background:rgba(15,15,17,.94);
+                 border:1px solid rgba(212,175,55,.8);
+                 box-shadow:0 10px 35px rgba(0,0,0,.4);">
+
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
+
+                    <!-- MOVIE POSTER -->
+                    <div class="md:col-span-4 flex justify-center items-start">
+                        <div class="w-44 sm:w-56 md:w-full max-w-[260px]">
+                            <img id="success-movie-poster"
+                                 src=""
+                                 alt="โปสเตอร์ภาพยนตร์ที่จอง"
+                                 referrerpolicy="no-referrer"
+                                 onerror="posterFallback(this)"
+                                 class="w-full aspect-[2/3] object-cover rounded-xl"
+                                 style="border:2px solid #D4AF37;
+                                 box-shadow:0 8px 25px rgba(0,0,0,.5);">
+
+                            <p class="text-center text-[#D4AF37] text-xs mt-3 tracking-widest">
+                                MAHAMIT THEATER
+                            </p>
                         </div>
                     </div>
 
-                    <div class="pt-2 text-xs text-brand-lightGray space-y-1 font-mono">
-                        <p><strong class="text-white font-sans">ชื่อผู้จอง:</strong> <span id="confirmed-name"></span></p>
-                        <p><strong class="text-white font-sans">เบอร์โทร:</strong> <span id="confirmed-phone"></span></p>
-                        <p><strong class="text-white font-sans">ภาพยนตร์:</strong> <span id="confirmed-movie"></span></p>
-                        <p><strong class="text-white font-sans">วันที่ & รอบฉาย:</strong> <span id="confirmed-datetime"></span></p>
-                        <p><strong class="text-white font-sans">ที่นั่ง:</strong> <span id="confirmed-seats" class="text-brand-gold font-bold"></span></p>
-                        <p><strong class="text-white font-sans">ยอดชำระ:</strong> <span id="confirmed-amount"></span> <span id="confirmed-discount" class="text-emerald-400"></span></p>
+                    <!-- DETAILS -->
+                    <div class="md:col-span-8 min-w-0">
+
+                        <p class="text-[#FFD65A] text-xs sm:text-sm font-bold tracking-widest mb-2">
+                            BOOKING CONFIRMATION
+                        </p>
+
+                        <h3 id="confirmed-movie"
+                            class="text-2xl sm:text-3xl font-bold text-white mb-5 break-words">
+                            ภาพยนตร์
+                        </h3>
+
+                        <div class="space-y-0 text-sm sm:text-base">
+
+                            <div class="grid grid-cols-[28px_115px_minmax(0,1fr)] gap-2 items-start py-3 border-b border-zinc-700/80">
+                                <i class="fa-solid fa-user text-[#D4AF37] mt-1"></i>
+                                <span class="text-zinc-400">ชื่อผู้จอง</span>
+                                <span id="confirmed-name" class="text-white font-medium break-words"></span>
+                            </div>
+
+                            <div class="grid grid-cols-[28px_115px_minmax(0,1fr)] gap-2 items-start py-3 border-b border-zinc-700/80">
+                                <i class="fa-solid fa-phone text-[#D4AF37] mt-1"></i>
+                                <span class="text-zinc-400">เบอร์โทร</span>
+                                <span id="confirmed-phone" class="text-white break-words"></span>
+                            </div>
+
+                            <div class="grid grid-cols-[28px_115px_minmax(0,1fr)] gap-2 items-start py-3 border-b border-zinc-700/80">
+                                <i class="fa-solid fa-calendar-days text-[#D4AF37] mt-1"></i>
+                                <span class="text-zinc-400">วันและรอบฉาย</span>
+                                <span id="confirmed-datetime" class="text-white break-words"></span>
+                            </div>
+
+                            <div class="grid grid-cols-[28px_115px_minmax(0,1fr)] gap-2 items-start py-3 border-b border-zinc-700/80">
+                                <i class="fa-solid fa-couch text-[#D4AF37] mt-1"></i>
+                                <span class="text-zinc-400">ที่นั่ง</span>
+                                <span id="confirmed-seats" class="text-[#FFD65A] font-bold break-words"></span>
+                            </div>
+
+                            <div class="grid grid-cols-[28px_115px_minmax(0,1fr)] gap-2 items-start py-3">
+                                <i class="fa-solid fa-money-bill-wave text-[#D4AF37] mt-1"></i>
+                                <span class="text-zinc-400">ยอดชำระ</span>
+                                <div class="min-w-0">
+                                    <span id="confirmed-amount"
+                                          class="text-[#FFD65A] text-lg font-bold"></span>
+                                    <span id="confirmed-discount"
+                                          class="block text-emerald-400 text-xs mt-1 break-words"></span>
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="print-hide pt-4 flex flex-col sm:flex-row justify-center gap-4">
-                    <!-- บันทึกเป็น PDF: เลือก "บันทึกเป็น PDF" ในหน้าต่างพิมพ์ของเบราว์เซอร์ -->
-                    <button onclick="printBooking()" class="bg-zinc-800 hover:bg-zinc-700 text-white px-8 py-3 rounded-xl transition font-bold border border-zinc-600">
-                        <i class="fa-solid fa-print mr-2"></i> พิมพ์ / บันทึกใบจองเป็น PDF
-                    </button>
-                    <button onclick="resetToHome()" class="bg-brand-red hover:bg-brand-redHover text-white px-8 py-3 rounded-xl transition font-bold border border-brand-gold/40">
-                        กลับสู่หน้าหลัก / จองเพิ่ม
-                    </button>
+            <!-- ADMIN REVIEW NOTICE -->
+            <div class="rounded-xl p-4 sm:p-5 mb-6"
+                 style="background:linear-gradient(135deg,rgba(212,175,55,.12),rgba(20,20,20,.96));
+                 border:1px solid #8F7021;">
+
+                <div class="flex gap-4 items-start">
+                    <i class="fa-solid fa-envelope-circle-check text-3xl text-[#FFD65A] mt-1"></i>
+
+                    <div class="min-w-0">
+                        <h4 class="text-[#FFD65A] font-bold text-base sm:text-lg">
+                            รอการตรวจสอบจากแอดมิน
+                        </h4>
+
+                        <p class="text-zinc-300 text-sm leading-relaxed mt-2">
+                            ระบบได้รับข้อมูลการจองของคุณแล้ว
+                            กรุณารอการตรวจสอบการชำระเงิน
+                            จากนั้นแอดมินจะจัดส่ง QR Code สำหรับเข้าชม
+                            ไปยังอีเมลที่ลงทะเบียนไว้
+                        </p>
+
+                        <p class="text-white text-sm mt-3 break-all">
+                            <i class="fa-solid fa-envelope text-[#D4AF37] mr-2"></i>
+                            <span id="confirmed-email"></span>
+                        </p>
+                    </div>
                 </div>
             </div>
-        </section>
+
+            <!-- PRINT HEADER: VISIBLE ON PAPER ONLY -->
+            <div class="print-only text-left"
+                 style="border-bottom:2px solid #111;padding-bottom:10px;">
+                <div style="font-size:22px;font-weight:700;letter-spacing:2px;">
+                    MAHAMIT THEATER
+                </div>
+                <div style="font-size:14px;margin-top:4px;">
+                    ใบจองตั๋วภาพยนตร์ (รอตรวจสอบการชำระเงิน) · ยังไม่ใช่บัตรเข้าชม
+                </div>
+                <div style="font-size:12px;margin-top:2px;">
+                    พิมพ์เมื่อ <span id="print-time"></span>
+                </div>
+            </div>
+
+            <!-- ACTION BUTTONS -->
+            <div class="print-hide grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+                <button type="button"
+                        onclick="printBooking()"
+                        class="flex items-center justify-center gap-3 px-5 py-4 rounded-xl font-bold text-white transition"
+                        style="background:linear-gradient(135deg,#303033,#171719);
+                        border:1px solid #888;">
+                    <i class="fa-solid fa-print text-xl"></i>
+                    <span>พิมพ์ / บันทึก PDF</span>
+                </button>
+
+                <button type="button"
+                        onclick="resetToHome()"
+                        class="flex items-center justify-center gap-3 px-5 py-4 rounded-xl font-bold text-white transition"
+                        style="background:linear-gradient(135deg,#A71931,#690B1B);
+                        border:1px solid #D4AF37;
+                        box-shadow:0 4px 15px rgba(139,21,40,.3);">
+                    <i class="fa-solid fa-house text-xl"></i>
+                    <span>กลับหน้าหลัก / จองเพิ่ม</span>
+                </button>
+
+            </div>
+
+            <!-- BRAND FOOTNOTE -->
+            <p class="text-center text-zinc-500 text-[10px] sm:text-xs mt-7 tracking-wider">
+                MAHAMIT THEATER · CLASSIC &amp; MODERN CINEMA EXPERIENCE
+            </p>
+
+        </div>
+    </div>
+</section>
+<!-- END PREMIUM BOOKING SUCCESS -->
+
 
     </main>
 
@@ -2127,6 +2295,7 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
                 document.getElementById('confirmed-booking-id').innerText = bookingId;
                 document.getElementById('confirmed-email').innerText = custEmail;
                 document.getElementById('confirmed-movie').innerText = selectedMovie.title;
+                document.getElementById('success-movie-poster').src = selectedMovie.poster;
                 document.getElementById('confirmed-datetime').innerText = `${selectedDate} เวลา ${selectedTime} น.`;
                 document.getElementById('confirmed-seats').innerText = [...selectedSeats].sort().join(', ');
                 document.getElementById('confirmed-amount').innerText = `${totalPrice.toLocaleString()} บาท`;
