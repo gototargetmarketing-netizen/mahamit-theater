@@ -1658,7 +1658,7 @@ function posterFallback(img) {
             });
         }
 
-        // รอบฉายของวันนั้น (เสาร์–อาทิตย์ 3 รอบ วันธรรมดา 2 รอบ) ต้องตรงกับ WEEKDAY/WEEKEND_SHOWTIMES ใน Code.gs
+        // รอบฉายของวันนั้น (จันทร์–ศุกร์ 14:00/17:00/20:00, เสาร์–อาทิตย์ 10:00/14:00/17:00/20:00) ต้องตรงกับ WEEKDAY/WEEKEND_SHOWTIMES ใน Code.gs
         function slotsForDate(date) {
             // ใส่เวลา 00:00 ให้อ่านเป็นเวลาในเครื่อง (ถ้าไม่ใส่จะอ่านเป็น UTC ซึ่งบางเขตเวลาจะได้วันผิด)
             const dayOfWeek = new Date(date + 'T00:00:00').getDay(); // 0 = Sun, 6 = Sat
@@ -1718,9 +1718,12 @@ function posterFallback(img) {
             const timeContainer = document.getElementById('showtime-slots');
 
             const slots = slotsForDate(selectedDate);
-            badge.innerText = slots.length === 3
-                ? '📅 วันเสาร์ - อาทิตย์ (เปิดบริการ 3 รอบ)'
-                : '📅 วันธรรมดา จันทร์ - ศุกร์ (เปิดบริการ 2 รอบ)';
+            // ดูจากวันในสัปดาห์ ไม่ใช่จำนวนรอบ (เดิมเช็ก "3 รอบ = เสาร์–อาทิตย์" พอเปลี่ยนรอบฉาย ป้ายเลยสลับกัน)
+            // จำนวนรอบนับจากรอบจริง เปลี่ยนรอบฉายใน slotsForDate แล้วป้ายถูกเอง
+            const day = new Date(selectedDate + 'T00:00:00').getDay();
+            badge.innerText = (day === 0 || day === 6)
+                ? `📅 วันเสาร์ - อาทิตย์ (เปิดบริการ ${slots.length} รอบ)`
+                : `📅 วันธรรมดา จันทร์ - ศุกร์ (เปิดบริการ ${slots.length} รอบ)`;
 
             // รอบที่เหลือไม่ถึง 15 นาทีก่อนฉาย (หรือฉายไปแล้ว) กดไม่ได้
             const openSlots = slots.filter(time => isSlotOpen(selectedDate, time));
