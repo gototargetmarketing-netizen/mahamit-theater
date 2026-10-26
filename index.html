@@ -1050,15 +1050,15 @@ function posterFallback(img) {
                     <form id="booking-form" novalidate onsubmit="handleFormSubmit(event)" class="space-y-4">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div class="sm:col-span-2">
-                                <label class="block text-xs font-medium text-brand-lightGray mb-1">ชื่อ - นามสกุล <span class="text-brand-red">*</span></label>
+                                <label class="block text-base font-medium text-brand-lightGray mb-1">ชื่อ - นามสกุล <span class="text-brand-red">*</span></label>
                                 <input type="text" id="cust-name" required placeholder="กรอกชื่อและนามสกุล" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-brand-lightGray mb-1">อีเมล (สำหรับรับตั๋วเข้างาน) <span class="text-brand-red">*</span></label>
+                                <label class="block text-base font-medium text-brand-lightGray mb-1">อีเมล (สำหรับรับตั๋วเข้างาน) <span class="text-brand-red">*</span></label>
                                 <input type="email" id="cust-email" required placeholder="อีเมลสำหรับรับ QR เข้าชม" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-brand-lightGray mb-1">เบอร์โทรศัพท์ <span class="text-brand-red">*</span></label>
+                                <label class="block text-base font-medium text-brand-lightGray mb-1">เบอร์โทรศัพท์ <span class="text-brand-red">*</span></label>
                                 <input type="tel" id="cust-phone" required placeholder="เบอร์มือถือ 10 หลัก" inputmode="numeric" maxlength="10" pattern="0[0-9]{9}" autocomplete="tel"
                                     oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10)" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
                             </div>
@@ -1066,7 +1066,7 @@ function posterFallback(img) {
 
                         <!-- โค้ดส่วนลด: ตรวจกับ Apps Script แล้วแสดงยอดหลังลดก่อนลูกค้าโอนเงิน (ยกมาจากคอนเสิร์ต) -->
                         <div class="space-y-2">
-                            <label for="discountCodeInput" class="block text-xs font-medium text-brand-lightGray">
+                            <label for="discountCodeInput" class="block text-base font-medium text-brand-lightGray">
                                 <i class="fa-solid fa-tag text-brand-gold mr-1"></i> โค้ดส่วนลด (ถ้ามี)
                             </label>
                             <div class="flex gap-2">
@@ -1118,18 +1118,18 @@ function posterFallback(img) {
                             <!-- Payment Date & Time Auto Inputs -->
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                                 <div>
-                                    <label class="block text-xs font-medium text-brand-lightGray mb-1">วันที่โอนเงิน (ตามสลิป) <span class="text-brand-red">*</span></label>
+                                    <label class="block text-base font-medium text-brand-lightGray mb-1">วันที่โอนเงิน (ตามสลิป) <span class="text-brand-red">*</span></label>
                                     <input type="date" id="pay-date" required class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-brand-lightGray mb-1">เวลาที่โอนเงิน (ตามสลิป) <span class="text-brand-red">*</span></label>
+                                    <label class="block text-base font-medium text-brand-lightGray mb-1">เวลาที่โอนเงิน (ตามสลิป) <span class="text-brand-red">*</span></label>
                                     <input type="time" id="pay-time" required class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
                                 </div>
                             </div>
 
                             <!-- Payment Slip Upload -->
                             <div class="mt-5">
-                                <label for="payment-slip" class="block text-xs font-medium text-brand-lightGray mb-2">แนบสลิปการชำระเงิน <span class="text-brand-red">*</span></label>
+                                <label for="payment-slip" class="block text-base font-medium text-brand-lightGray mb-2">แนบสลิปการชำระเงิน <span class="text-brand-red">*</span></label>
                                 <input type="file" id="payment-slip" name="paymentSlip" accept="image/*,.pdf,application/pdf" required
                                     class="block w-full text-sm text-brand-lightGray bg-zinc-900 border border-zinc-700 rounded-lg p-3 file:mr-3 file:rounded-md file:border-0 file:bg-brand-red file:px-3 file:py-2 file:text-white file:font-semibold hover:file:bg-brand-redHover">
                                 <p class="text-[11px] text-brand-lightGray mt-2">รูปภาพจะถูกย่อและบีบอัดอัตโนมัติก่อนส่ง (แนะนำภาพจากมือถือได้เลย) ส่วน PDF รองรับไม่เกิน 4 MB ไฟล์จะถูกเก็บใน Google Drive ของโรงภาพยนตร์</p>
