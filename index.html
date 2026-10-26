@@ -1051,16 +1051,16 @@ function posterFallback(img) {
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div class="sm:col-span-2">
                                 <label class="block text-base font-medium text-brand-lightGray mb-1">ชื่อ - นามสกุล <span class="text-brand-red">*</span></label>
-                                <input type="text" id="cust-name" required placeholder="กรอกชื่อและนามสกุล" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
+                                <input type="text" id="cust-name" required placeholder="กรอกชื่อและนามสกุล" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white placeholder:text-sm focus:outline-none focus:border-brand-red transition">
                             </div>
                             <div>
                                 <label class="block text-base font-medium text-brand-lightGray mb-1">อีเมล (สำหรับรับตั๋วเข้างาน) <span class="text-brand-red">*</span></label>
-                                <input type="email" id="cust-email" required placeholder="อีเมลสำหรับรับ QR เข้าชม" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
+                                <input type="email" id="cust-email" required placeholder="อีเมลสำหรับรับ QR เข้าชม" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white placeholder:text-sm focus:outline-none focus:border-brand-red transition">
                             </div>
                             <div>
                                 <label class="block text-base font-medium text-brand-lightGray mb-1">เบอร์โทรศัพท์ <span class="text-brand-red">*</span></label>
                                 <input type="tel" id="cust-phone" required placeholder="เบอร์มือถือ 10 หลัก" inputmode="numeric" maxlength="10" pattern="0[0-9]{9}" autocomplete="tel"
-                                    oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10)" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
+                                    oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10)" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white placeholder:text-sm focus:outline-none focus:border-brand-red transition">
                             </div>
                         </div>
 
@@ -1072,7 +1072,7 @@ function posterFallback(img) {
                             <div class="flex gap-2">
                                 <input type="text" id="discountCodeInput" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40"
                                     placeholder="กรอกโค้ดส่วนลด"
-                                    class="flex-1 min-w-0 bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white uppercase focus:outline-none focus:border-brand-red transition disabled:text-zinc-400">
+                                    class="flex-1 min-w-0 bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white uppercase placeholder:text-sm focus:outline-none focus:border-brand-red transition disabled:text-zinc-400">
                                 <button type="button" id="btnApplyDiscount" onclick="toggleDiscountCode()"
                                     class="px-4 bg-brand-red hover:bg-brand-redHover text-white text-sm font-bold rounded-lg transition whitespace-nowrap border border-brand-gold/40 disabled:opacity-60 disabled:cursor-wait">
                                     ใช้โค้ด
