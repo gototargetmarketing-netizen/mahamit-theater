@@ -929,6 +929,12 @@ function posterFallback(img) {
                 <p class="text-brand-lightGray text-sm">เลือกชมภาพยนตร์สุดคลาสสิกและไฮไลต์ประจำสัปดาห์ ณ โรงภาพยนตร์เกรียงไกรมาหามิตร</p>
             </div>
 
+            <!-- เลือกวันดูว่าวันนั้นฉายเรื่องอะไร (31 ต.ค. 2569) ค่าเริ่มต้น "ทุกเรื่อง" = แสดงทุกเรื่องพร้อมรอบถัดไป -->
+            <div class="max-w-5xl mx-auto -mt-2">
+                <div id="home-date-chips" class="flex items-stretch gap-2 overflow-x-auto pb-2 sm:justify-center" aria-label="เลือกวันที่ฉาย"></div>
+                <p id="home-date-note" class="text-center text-xs text-brand-lightGray mt-2 min-h-[1rem]" aria-live="polite"></p>
+            </div>
+
             <!-- Movie Grid (5 Movies) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6" id="movie-grid">
                 <!-- Dynamically Inserted Movies via JS -->
@@ -956,18 +962,25 @@ function posterFallback(img) {
 
             <!-- Showtime Controls -->
             <div class="bg-brand-card p-6 rounded-xl border border-zinc-800 space-y-4">
-                <h4 class="text-lg font-semibold text-brand-cream border-l-4 border-brand-red pl-3">1. เลือกลักษณะวัน และรอบเวลา</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Date Input -->
+                <h4 class="text-lg font-semibold text-brand-cream border-l-4 border-brand-red pl-3">1. เลือกวันและรอบฉาย</h4>
+                <div class="space-y-5">
+                    <!-- วันที่ฉาย: แสดงเฉพาะวันที่เรื่องนี้มีรอบ (จากแท็บ showtimes) เดิมเป็นช่องเลือกวันที่ใดก็ได้ -->
                     <div>
-                        <label class="block text-xs text-brand-lightGray mb-2 font-medium">วันที่ต้องการเข้าชม:</label>
-                        <input type="date" id="booking-date" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
+                        <label class="block text-xs text-brand-lightGray mb-2 font-medium">วันที่ฉาย:</label>
+                        <!-- แถววันเลื่อนซ้าย-ขวาได้ (มือถือปัด) บนคอมมีปุ่ม ‹ › ขึ้นเฉพาะตอนที่วันยาวเกินจอ -->
+                        <div class="flex items-center gap-2">
+                            <button type="button" id="date-scroll-left" onclick="scrollDateChips(-1)" aria-label="เลื่อนไปวันก่อนหน้า"
+                                class="hidden flex-shrink-0 w-9 h-9 rounded-full border border-zinc-700 bg-zinc-900 text-brand-gold text-lg leading-none hover:border-brand-gold disabled:opacity-30 disabled:cursor-default">‹</button>
+                            <div id="date-chips" onscroll="updateDateArrows()" class="relative flex-1 min-w-0 flex items-stretch gap-2 overflow-x-auto pb-2 scroll-smooth"></div>
+                            <button type="button" id="date-scroll-right" onclick="scrollDateChips(1)" aria-label="เลื่อนไปวันถัดไป"
+                                class="hidden flex-shrink-0 w-9 h-9 rounded-full border border-zinc-700 bg-zinc-900 text-brand-gold text-lg leading-none hover:border-brand-gold disabled:opacity-30 disabled:cursor-default">›</button>
+                        </div>
                         <p id="date-type-badge" class="text-xs mt-2 text-brand-gold font-medium"></p>
                     </div>
 
                     <!-- Time Slots -->
                     <div>
-                        <label class="block text-xs text-brand-lightGray mb-2 font-medium">รอบเวลาที่เปิดบริการ:</label>
+                        <label class="block text-xs text-brand-lightGray mb-2 font-medium">รอบฉาย:</label>
                         <div id="showtime-slots" class="flex flex-wrap gap-3">
                             <!-- Slots generated dynamically -->
                         </div>
@@ -1059,7 +1072,10 @@ function posterFallback(img) {
                             </div>
                             <div>
                                 <label class="block text-base font-medium text-brand-lightGray mb-1">เบอร์โทรศัพท์ <span class="text-brand-red">*</span></label>
-                                <input type="tel" id="cust-phone" required placeholder="เบอร์มือถือ 10 หลัก" inputmode="numeric" maxlength="10" pattern="0[0-9]{9}" autocomplete="tel"
+                                <!-- ไม่ใส่ maxlength: ถ้าลูกค้าวางเบอร์ที่มีขีด (081-234-5678) หรือมือถือกรอกให้อัตโนมัติ
+                                     maxlength จะตัดเหลือ 10 ตัวอักษรก่อนลบขีด เบอร์จะขาด (เจอตอนทดสอบ 31 ต.ค. 2569)
+                                     oninput ตัดเหลือตัวเลข 10 หลักให้อยู่แล้ว และ Apps Script ตรวจซ้ำใน cleanPhone_ -->
+                                <input type="tel" id="cust-phone" required placeholder="เบอร์มือถือ 10 หลัก" inputmode="numeric" pattern="0[0-9]{9}" autocomplete="tel"
                                     oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10)" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white placeholder:text-xs focus:outline-none focus:border-brand-red transition">
                             </div>
                         </div>
@@ -1511,7 +1527,15 @@ function posterFallback(img) {
          * ---------------------------------------------------- */
         window.onload = function() {
             loadMovies();
-            setupDefaultDates();
+            loadSchedule();
+            renderHomeDates();
+            // โหลดตารางรอบใหม่ทุก 1 นาทีระหว่างเปิดหน้าแรกหรือขั้นเลือกที่นั่งค้างไว้ (รอบที่เพิ่งเต็มจะขึ้น SOLD OUT)
+            // ไม่โหลดตอนสลับไปแอปอื่น (ประหยัดเน็ตและโควตา Apps Script)
+            setInterval(() => {
+                if (document.visibilityState === 'visible' && currentStep <= 2) loadSchedule();
+            }, 60000);
+            // หมุนจอ/ย่อหน้าต่าง: ความกว้างเปลี่ยน ปุ่ม ‹ › ของแถววันอาจต้องขึ้นหรือหาย
+            window.addEventListener('resize', updateDateArrows);
             // แก้ช่องที่มีกรอบแดงแล้ว เอากรอบแดงออก
             ['cust-name', 'cust-email', 'cust-phone', 'discountCodeInput', 'pay-date', 'pay-time', 'payment-slip'].forEach(id => {
                 const el = document.getElementById(id);
@@ -1545,6 +1569,7 @@ function posterFallback(img) {
 
         function showMovies(list) {
             MOVIES_DATA = list;
+            renderHomeDates(); // จำนวนเรื่องที่ฉายแต่ละวันนับจากรายชื่อหนังชุดนี้
             renderMovies();
             if (window.startMovieIntro) window.startMovieIntro(MOVIES_DATA);
         }
@@ -1584,40 +1609,309 @@ function posterFallback(img) {
             }
         }
 
+        /* ----------------------------------------------------
+         * ตารางรอบฉาย (31 ต.ค. 2569)
+         * แต่ละเรื่องมีวันและเวลาฉายของตัวเอง แอดมินตั้งในแท็บ "รอบฉาย" ของหน้าแอดมิน
+         * โหลดจาก Apps Script ?action=schedule: shows = [[รหัสหนัง, วันที่, เวลา, ที่นั่งที่ถูกจอง], ...]
+         * เดิมทุกเรื่องฉายทุกวันด้วยรอบตายตัว (slotsForDate) และปิดรับจองก่อนฉาย 15 นาที
+         * ---------------------------------------------------- */
+        let SCHEDULE = [];             // [{ movieId, date, time, booked }] เรียงตามวันและเวลา
+        let scheduleLoaded = false;    // ได้ข้อมูลจาก Apps Script แล้ว (ไม่ใช่แค่ข้อมูลที่จำไว้ในเครื่อง)
+        let scheduleError = '';
+        // ค่าจริงมาจาก Apps Script ต้องตรงกับ SEAT_CAPACITY / SHOW_CLOSE_AFTER_START_MINUTES ใน Code.gs
+        let SEAT_CAPACITY = SEAT_ROWS.length * SEATS_PER_ROW;
+        let SHOW_CLOSE_AFTER_START_MINUTES = 15;
+        let homeDate = 'all';          // วันที่เลือกในหน้าแรก ('all' = ทุกเรื่อง พร้อมรอบถัดไป)
+        const HOME_DAYS = 7;           // ปุ่มวันในหน้าแรก: วันนี้ + 6 วันถัดไป (วันอื่นเลือกจากปฏิทิน)
+        const SCHEDULE_CACHE_KEY = 'mt_schedule|' + GOOGLE_SCRIPT_URL;
+        const THAI_DAY_SHORT = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
+        const THAI_MONTH_SHORT = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        const THAI_MONTH_FULL = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+        // ลูกค้าเห็นรอบล่วงหน้ากี่วัน ค่าจริงมาจาก Apps Script (SCHEDULE_DAYS_AHEAD ใน Code.gs) ใช้กับปฏิทิน "เลือกวันอื่น"
+        let SCHEDULE_DAYS_AHEAD = 30;
+
+        // ใช้เฉพาะข้อมูลรูปแบบที่ถูกต้อง (รหัสหนัง วันที่ และเวลาไปอยู่ใน onclick)
+        function parseSchedule(result) {
+            return (Array.isArray(result && result.shows) ? result.shows : [])
+                .filter(s => Array.isArray(s) && /^m[a-z0-9]{1,15}$/.test(String(s[0]))
+                    && /^\d{4}-\d{2}-\d{2}$/.test(String(s[1])) && /^\d{2}:\d{2}$/.test(String(s[2])))
+                .map(s => ({ movieId: String(s[0]), date: String(s[1]), time: String(s[2]), booked: Math.max(0, Number(s[3]) || 0) }))
+                .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+        }
+
+        function applyScheduleSettings(result) {
+            if (result && Number(result.capacity) > 0) SEAT_CAPACITY = Number(result.capacity);
+            if (result && Number(result.closeAfterMinutes) >= 0) SHOW_CLOSE_AFTER_START_MINUTES = Number(result.closeAfterMinutes);
+            if (result && Number(result.daysAhead) > 0) SCHEDULE_DAYS_AHEAD = Number(result.daysAhead);
+        }
+
+        // 2026-11-03 → พฤศจิกายน (ป้ายคั่นเดือนในแถววัน) ใส่ปีด้วยถ้าไม่ใช่ปีนี้
+        function monthName(dateText) {
+            const d = new Date(dateText + 'T00:00:00');
+            return THAI_MONTH_FULL[d.getMonth()] + (d.getFullYear() !== new Date().getFullYear() ? ' ' + (d.getFullYear() + 543) : '');
+        }
+
+        // ปุ่ม ‹ › ของแถววันในขั้นเลือกรอบ: ขึ้นเฉพาะบนจอกว้าง (คอม) และเฉพาะตอนที่วันยาวเกินกรอบ
+        // มือถือปัดเลื่อนได้อยู่แล้ว ไม่ต้องมีปุ่มกินที่
+        function updateDateArrows() {
+            const box = document.getElementById('date-chips');
+            const left = document.getElementById('date-scroll-left');
+            const right = document.getElementById('date-scroll-right');
+            if (!box || !left || !right) return;
+            const overflow = box.scrollWidth > box.clientWidth + 2;
+            const wide = window.matchMedia('(min-width: 640px)').matches;
+            [left, right].forEach(b => b.classList.toggle('hidden', !(overflow && wide)));
+            left.disabled = box.scrollLeft <= 2;
+            right.disabled = box.scrollLeft + box.clientWidth >= box.scrollWidth - 2;
+        }
+
+        function scrollDateChips(direction) {
+            const box = document.getElementById('date-chips');
+            box.scrollBy({ left: direction * Math.max(200, box.clientWidth * 0.8), behavior: 'smooth' });
+        }
+
+        // เปิดเว็บ: ใช้ตารางที่จำไว้ในเครื่องแสดงก่อน (ไม่ต้องรอ) แล้วโหลดของจริงจาก Apps Script
+        // ข้อมูลในเครื่องอาจเก่า แต่ Apps Script ตรวจรอบและที่นั่งซ้ำตอนจองอยู่แล้ว
+        async function loadSchedule() {
+            if (!scheduleLoaded && !SCHEDULE.length) {
+                try {
+                    const cached = JSON.parse(localStorage.getItem(SCHEDULE_CACHE_KEY) || 'null');
+                    if (cached) { applyScheduleSettings(cached); SCHEDULE = parseSchedule(cached); onScheduleChanged(); }
+                } catch (e) {}
+            }
+            try {
+                const result = await requestJsonp(GOOGLE_SCRIPT_URL + '?action=schedule', '__schedule_', 15000);
+                if (!result || result.success !== true) throw new Error((result && result.message) || 'โหลดรอบฉายไม่สำเร็จ');
+                applyScheduleSettings(result);
+                const fresh = parseSchedule(result);
+                const changed = !scheduleLoaded || JSON.stringify(fresh) !== JSON.stringify(SCHEDULE);
+                SCHEDULE = fresh;
+                scheduleLoaded = true;
+                scheduleError = '';
+                try { localStorage.setItem(SCHEDULE_CACHE_KEY, JSON.stringify(result)); } catch (e) {}
+                if (changed) onScheduleChanged();
+            } catch (error) {
+                console.error('Schedule error:', error);
+                // มีตารางที่จำไว้แล้ว ใช้ต่อไปได้ ถ้ายังไม่มีอะไรเลยแจ้งลูกค้าพร้อมปุ่มลองใหม่
+                if (!scheduleLoaded && !SCHEDULE.length) {
+                    scheduleError = 'โหลดรอบฉายไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ต';
+                    onScheduleChanged();
+                }
+            }
+        }
+
+        // วาดใหม่ตามขั้นที่ลูกค้าอยู่ (ขั้นเลือกที่นั่ง: ไม่ล้างที่นั่งที่เลือกไว้ถ้ารอบเดิมยังอยู่)
+        function onScheduleChanged() {
+            if (currentStep === 1) { renderHomeDates(); renderMovies(); }
+            else if (currentStep === 2 && selectedMovie) updateShowtimesAndSeats({ keepSeats: true });
+        }
+
+        // ยังจองรอบนี้ได้ไหม: ได้จนถึง 15 นาทีหลังหนังเริ่ม (ผู้ใช้ขอ 31 ต.ค. 2569 เดิมปิดก่อนฉาย 15 นาที)
+        // ใช้เวลาในเครื่องลูกค้า (อยู่ในไทย) ถ้านาฬิกาเครื่องเพี้ยน Apps Script จะตรวจซ้ำด้วยเวลาจริง
+        function isSlotOpen(date, time) {
+            const showStart = new Date(`${date}T${time}:00`);
+            return showStart.getTime() + SHOW_CLOSE_AFTER_START_MINUTES * 60 * 1000 >= Date.now();
+        }
+
+        function isSoldOut(show) {
+            return show.booked >= SEAT_CAPACITY;
+        }
+
+        // รอบที่ยังจองได้ (ตามเวลา) ของหนังเรื่องนั้น ถ้าใส่วันที่ = เฉพาะวันนั้น
+        function openShows(movieId, date) {
+            return SCHEDULE.filter(s => s.movieId === movieId && (!date || s.date === date) && isSlotOpen(s.date, s.time));
+        }
+
+        function movieShowDates(movieId) {
+            return Array.from(new Set(openShows(movieId).map(s => s.date)));
+        }
+
+        // รอบถัดไปที่ยังมีที่นั่ง (กดหนังจากหน้าแรกแล้วไปวันนี้)
+        function nextBookableShow(movieId) {
+            return openShows(movieId).find(s => !isSoldOut(s)) || null;
+        }
+
+        function localDateString(date) {
+            return date.getFullYear() + '-'
+                + String(date.getMonth() + 1).padStart(2, '0') + '-'
+                + String(date.getDate()).padStart(2, '0');
+        }
+
+        // ใส่เวลา 00:00 ให้อ่านเป็นวันที่ตามเครื่อง (ถ้าไม่ใส่จะอ่านเป็น UTC แล้ววันอาจเลื่อน)
+        function addDays(dateText, n) {
+            const d = new Date(dateText + 'T00:00:00');
+            d.setDate(d.getDate() + n);
+            return localDateString(d);
+        }
+
+        // วันนี้ / พรุ่งนี้ / ส.
+        function dayLabel(dateText) {
+            const today = localDateString(new Date());
+            if (dateText === today) return 'วันนี้';
+            if (dateText === addDays(today, 1)) return 'พรุ่งนี้';
+            return THAI_DAY_SHORT[new Date(dateText + 'T00:00:00').getDay()];
+        }
+
+        // 2026-11-01 → 1 พ.ย.
+        function dayMonth(dateText) {
+            const d = new Date(dateText + 'T00:00:00');
+            return d.getDate() + ' ' + THAI_MONTH_SHORT[d.getMonth()];
+        }
+
+        /* ---------- หน้าแรก: แถบเลือกวัน ---------- */
+        function renderHomeDates() {
+            const bar = document.getElementById('home-date-chips');
+            const note = document.getElementById('home-date-note');
+            if (!bar) return;
+            const today = localDateString(new Date());
+            const days = Array.from({ length: HOME_DAYS }, (_, i) => addDays(today, i));
+            // วันที่เลือกจากปฏิทินที่ไม่อยู่ใน 7 วันแรก แสดงเป็นปุ่มต่อจาก "ทุกเรื่อง"
+            if (homeDate !== 'all' && !days.includes(homeDate)) days.unshift(homeDate);
+            const moviesOn = date => new Set(openShows_any(date).map(s => s.movieId)).size;
+            const chip = (active, html, onclick, dim) => `
+                <button type="button" onclick="${onclick}" class="flex-shrink-0 min-w-[64px] px-3 py-2 rounded-xl border text-center leading-tight transition ${active
+                    ? 'bg-brand-red text-white border-brand-gold shadow-lg'
+                    : 'bg-zinc-900 text-zinc-300 border-zinc-700 hover:border-zinc-500'} ${dim && !active ? 'opacity-50' : ''}">${html}</button>`;
+            bar.innerHTML = chip(homeDate === 'all',
+                    '<span class="block text-[11px]">ดูทั้งหมด</span><span class="block text-sm font-bold">ทุกเรื่อง</span>', "setHomeDate('all')", false)
+                + days.map(d => {
+                    const n = moviesOn(d);
+                    return chip(homeDate === d,
+                        `<span class="block text-[11px]">${dayLabel(d)}</span><span class="block text-sm font-bold">${dayMonth(d)}</span>`
+                        + `<span class="block text-[10px] ${homeDate === d ? 'text-white/80' : 'text-zinc-500'}">${n ? n + ' เรื่อง' : 'ไม่มีรอบ'}</span>`,
+                        `setHomeDate('${d}')`, !n);
+                }).join('')
+                // วันอื่นนอกจาก 7 วันแรก: ปุ่ม "เลือกวันอื่น" หน้าตาเหมือนปุ่มวันอื่นๆ (ผู้ใช้ไม่อยากเห็น dd/mm/yyyy 31 ต.ค. 2569)
+                // ช่องวันที่จริงวางทับทั้งปุ่มแบบโปร่งใส แตะตรงไหนก็เปิดปฏิทินของเครื่อง
+                // ไม่ซ่อนด้วย display:none เพราะ iPhone เปิดปฏิทินจากช่องที่ซ่อนไว้ไม่ได้
+                // คอมกดที่ตัวช่องแล้วปฏิทินไม่เด้งเอง (ต้องกดที่ไอคอน) จึงเรียก showPicker() ช่วย
+                // เลือกวันแล้ววันนั้นจะขึ้นเป็นปุ่มในแถบ (ต่อจาก "ทุกเรื่อง") และถูกเลือกอยู่
+                + `<label class="relative flex-shrink-0 flex flex-col justify-center min-w-[84px] px-3 py-2 rounded-xl border bg-zinc-900 text-zinc-300 border-zinc-700 hover:border-zinc-500 text-center leading-tight cursor-pointer transition">
+                    <span class="block text-base text-brand-gold"><i class="fa-regular fa-calendar-days"></i></span>
+                    <span class="block text-sm font-bold mt-0.5">เลือกวันอื่น</span>
+                    <input type="date" id="home-date-input" aria-label="เลือกวันอื่นจากปฏิทิน" min="${today}" max="${addDays(today, SCHEDULE_DAYS_AHEAD)}" value="${homeDate === 'all' ? '' : homeDate}"
+                        onchange="if (this.value) setHomeDate(this.value)"
+                        onclick="try { this.showPicker(); } catch (e) {}"
+                        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                </label>`;
+            if (note) {
+                if (scheduleError && !SCHEDULE.length) {
+                    note.innerHTML = `${escapeHtml(scheduleError)} <button type="button" onclick="loadSchedule()" class="underline text-brand-gold ml-1">ลองอีกครั้ง</button>`;
+                } else if (homeDate === 'all') {
+                    note.textContent = SCHEDULE.length ? 'กดเวลาใต้โปสเตอร์เพื่อจองรอบนั้นได้ทันที' : '';
+                } else {
+                    const n = moviesOn(homeDate);
+                    note.textContent = thaiDateText(homeDate) + (n ? ' · ฉาย ' + n + ' เรื่อง' : ' · ยังไม่มีรอบฉาย');
+                }
+            }
+        }
+
+        // รอบที่ยังจองได้ของทุกเรื่องในวันนั้น (เฉพาะเรื่องที่แสดงอยู่บนหน้าเว็บ)
+        function openShows_any(date) {
+            const ids = new Set(MOVIES_DATA.map(m => m.id));
+            return SCHEDULE.filter(s => s.date === date && ids.has(s.movieId) && isSlotOpen(s.date, s.time));
+        }
+
+        function setHomeDate(date) {
+            homeDate = date === 'all' || /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : 'all';
+            renderHomeDates();
+            renderMovies();
+        }
+
+        /* ---------- หน้าแรก: การ์ดหนังพร้อมรอบฉาย ---------- */
+        // ปุ่มเวลาใต้โปสเตอร์: กดแล้วไปเลือกที่นั่งของรอบนั้นเลย / รอบที่เต็มขึ้น SOLD OUT กดไม่ได้
+        function homeTimeChips(movieId, shows) {
+            return shows.map(s => isSoldOut(s)
+                ? `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold bg-zinc-950 border border-zinc-800 text-zinc-500" title="รอบนี้เต็มแล้ว">
+                        <span class="line-through">${s.time}</span><span class="text-[9px] font-extrabold text-red-400">SOLD OUT</span></span>`
+                : `<button type="button" onclick="selectMovie('${movieId}','${s.date}','${s.time}')" class="px-2.5 py-1 rounded-md text-xs font-bold bg-zinc-900 border border-brand-gold/40 text-brand-gold hover:bg-brand-red hover:text-white hover:border-brand-gold transition">${s.time}</button>`
+            ).join('');
+        }
+
         function renderMovies() {
             const container = document.getElementById('movie-grid');
             if (!MOVIES_DATA.length) {
                 container.innerHTML = '<p class="col-span-full text-center text-sm text-zinc-400 py-16">ขณะนี้ยังไม่มีภาพยนตร์เปิดให้จอง</p>';
                 return;
             }
-            container.innerHTML = MOVIES_DATA.map(movie => `
+            const scheduleReady = scheduleLoaded || SCHEDULE.length > 0;
+            let cards = MOVIES_DATA.map(movie => ({
+                movie,
+                dayShows: homeDate === 'all' ? null : openShows(movie.id, homeDate),
+                next: nextBookableShow(movie.id),
+                first: openShows(movie.id)[0] || null
+            }));
+            if (homeDate !== 'all' && scheduleReady) {
+                // เลือกวันแล้ว: แสดงเฉพาะเรื่องที่ฉายวันนั้น
+                cards = cards.filter(c => c.dayShows.length);
+                if (!cards.length) {
+                    container.innerHTML = `<div class="col-span-full text-center py-16 space-y-3">
+                        <p class="text-sm text-zinc-300">${escapeHtml(thaiDateText(homeDate))} ยังไม่มีรอบฉาย</p>
+                        <button type="button" onclick="setHomeDate('all')" class="bg-brand-red text-white text-sm font-bold px-5 py-2.5 rounded-lg border border-brand-gold/40">ดูทุกเรื่อง</button></div>`;
+                    return;
+                }
+            } else if (scheduleReady) {
+                // ทุกเรื่อง: เรื่องที่มีรอบขึ้นก่อน เรื่องที่ยังไม่มีรอบ (เร็วๆ นี้) ไว้ท้าย ลำดับอื่นตามที่แอดมินเรียงไว้
+                cards = cards.filter(c => c.first).concat(cards.filter(c => !c.first));
+            }
+            container.innerHTML = cards.map(c => {
+                const movie = c.movie;
+                const comingSoon = scheduleReady && !c.first;
+                let showDate = '';
+                let showsHtml;
+                let button = { label: 'เลือกรอบ & จองที่นั่ง', disabled: false };
+                if (!scheduleReady) {
+                    showsHtml = scheduleError
+                        ? `<p class="text-[11px] text-zinc-500">${escapeHtml(scheduleError)}</p>`
+                        : '<p class="text-[11px] text-zinc-500">กำลังโหลดรอบฉาย…</p>';
+                } else if (comingSoon) {
+                    showsHtml = '<p class="text-xs text-zinc-400"><i class="fa-regular fa-clock mr-1"></i>ยังไม่มีรอบฉาย</p>';
+                    button = { label: 'เร็วๆ นี้', disabled: true };
+                } else {
+                    // เลือกวัน = รอบของวันนั้น / ทุกเรื่อง = รอบของวันที่ฉายถัดไปที่ยังมีที่นั่ง
+                    showDate = homeDate !== 'all' ? homeDate : (c.next || c.first).date;
+                    const shows = homeDate !== 'all' ? c.dayShows : openShows(movie.id, showDate);
+                    const label = homeDate !== 'all' ? 'รอบฉาย' : 'รอบถัดไป · ' + dayLabel(showDate) + ' ' + dayMonth(showDate);
+                    showsHtml = `<p class="text-[11px] text-zinc-400 mb-1.5"><i class="fa-regular fa-clock mr-1 text-brand-gold"></i>${escapeHtml(label)}</p>
+                        <div class="flex flex-wrap gap-1.5">${homeTimeChips(movie.id, shows)}</div>`;
+                    if (homeDate === 'all' && !c.next) button = { label: 'เต็มทุกรอบ', disabled: true };
+                }
+                return `
                 <div class="bg-brand-card rounded-xl border border-zinc-800 overflow-hidden hover:border-brand-red transition duration-300 flex flex-col justify-between group shadow-lg">
                     <div class="relative overflow-hidden aspect-[2/3]">
-                        <img src="${escapeHtml(movie.poster)}" alt="${escapeHtml(movie.title)}" loading="lazy" referrerpolicy="no-referrer" onerror="posterFallback(this)" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                        <img src="${escapeHtml(movie.poster)}" alt="${escapeHtml(movie.title)}" loading="lazy" referrerpolicy="no-referrer" onerror="posterFallback(this)" class="w-full h-full object-cover group-hover:scale-105 transition duration-500 ${comingSoon ? 'opacity-60' : ''}">
                         <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
                         ${movie.duration ? `<span class="absolute top-3 right-3 bg-brand-red text-white text-[10px] font-bold px-2 py-1 rounded shadow border border-brand-gold/40">
                             ${escapeHtml(movie.duration)}
                         </span>` : ''}
+                        ${comingSoon ? `<span class="absolute top-3 left-3 bg-black/80 text-brand-gold text-[11px] font-bold px-2.5 py-1 rounded border border-brand-gold/60">เร็วๆ นี้</span>` : ''}
                     </div>
                     <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
                         <div>
                             <span class="text-[10px] text-brand-gold font-medium uppercase tracking-wider block">${escapeHtml(movie.genre)}</span>
                             <h3 class="text-base font-bold text-white mt-1 group-hover:text-brand-gold transition line-clamp-1">${escapeHtml(movie.title)}</h3>
                             ${movie.description ? `<p class="text-xs text-zinc-400 mt-1.5 leading-relaxed line-clamp-3">${escapeHtml(movie.description)}</p>` : ''}
+                            <div class="mt-3">${showsHtml}</div>
                         </div>
-                        <button onclick="selectMovie('${movie.id}')" class="w-full bg-zinc-800 hover:bg-brand-red text-[#D4AF37] font-semibold py-2.5 px-4 rounded-lg text-xs transition border border-zinc-700 hover:border-brand-gold flex items-center justify-center space-x-1">
+                        ${button.disabled
+                            ? `<button type="button" disabled class="w-full bg-zinc-900 text-zinc-500 font-semibold py-2.5 px-4 rounded-lg text-xs border border-zinc-800 cursor-not-allowed">${button.label}</button>`
+                            : `<button onclick="selectMovie('${movie.id}'${showDate ? `,'${showDate}'` : ''})" class="w-full bg-zinc-800 hover:bg-brand-red text-[#D4AF37] font-semibold py-2.5 px-4 rounded-lg text-xs transition border border-zinc-700 hover:border-brand-gold flex items-center justify-center space-x-1">
                             <i class="fa-solid fa-ticket"></i>
-                            <span>เลือกรอบ & จองที่นั่ง</span>
-                        </button>
+                            <span>${button.label}</span>
+                        </button>`}
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         }
 
-        function selectMovie(movieId) {
+        // เลือกหนัง (จากหน้าแรก) ใส่วันหรือเวลามาด้วยได้ ถ้าไม่ใส่ = วันที่ฉายถัดไปที่ยังมีที่นั่ง
+        function selectMovie(movieId, date, time) {
             selectedMovie = MOVIES_DATA.find(m => m.id === movieId);
+            if (!selectedMovie) return;
             selectedSeats = [];
-            
+            selectedDate = date || '';
+            selectedTime = time || '';
+
             // Populate step 2 info
             document.getElementById('selected-movie-img').src = selectedMovie.poster;
             document.getElementById('selected-movie-title').innerText = selectedMovie.title;
@@ -1634,61 +1928,8 @@ function posterFallback(img) {
             updateShowtimesAndSeats();
         }
 
-        function localDateString(date) {
-            return date.getFullYear() + '-'
-                + String(date.getMonth() + 1).padStart(2, '0') + '-'
-                + String(date.getDate()).padStart(2, '0');
-        }
-
-        function setupDefaultDates() {
-            const dateInput = document.getElementById('booking-date');
-            // ใช้วันที่ตามเวลาในเครื่อง (toISOString เป็นเวลา UTC ก่อน 07:00 จะได้วันของเมื่อวาน
-            // แล้ว Apps Script จะปฏิเสธเพราะเป็นวันที่ผ่านมาแล้ว)
-            const first = firstBookableDate();
-            dateInput.value = first;
-            dateInput.min = first;
-            selectedDate = first;
-
-            dateInput.addEventListener('change', (e) => {
-                // บางเบราว์เซอร์ยังพิมพ์วันที่ย้อนหลังได้แม้ตั้ง min ไว้ จึงดึงกลับมาเป็นวันแรกที่จองได้
-                const min = firstBookableDate();
-                if (!e.target.value || e.target.value < min) e.target.value = min;
-                selectedDate = e.target.value;
-                updateShowtimesAndSeats();
-            });
-        }
-
-        // รอบฉายของวันนั้น (จันทร์–ศุกร์ 14:00/17:00/20:00, เสาร์–อาทิตย์ 10:00/14:00/17:00/20:00) ต้องตรงกับ WEEKDAY/WEEKEND_SHOWTIMES ใน Code.gs
-        function slotsForDate(date) {
-            // ใส่เวลา 00:00 ให้อ่านเป็นเวลาในเครื่อง (ถ้าไม่ใส่จะอ่านเป็น UTC ซึ่งบางเขตเวลาจะได้วันผิด)
-            const dayOfWeek = new Date(date + 'T00:00:00').getDay(); // 0 = Sun, 6 = Sat
-            return (dayOfWeek === 0 || dayOfWeek === 6) ? ['10:00', '14:00', '17:00', '20:00'] : ['14:00', '17:00', '20:00'];
-        }
-
-        // วันแรกที่ยังจองได้: วันนี้ ถ้ายังมีรอบที่ไม่ปิดรับจอง ไม่อย่างนั้นเป็นพรุ่งนี้
-        // ลูกค้าจะไม่เจอวันนี้ที่รอบปิดหมดแล้วเป็นค่าตั้งต้น และกดเลือกวันนั้นไม่ได้
-        function firstBookableDate() {
-            const now = new Date();
-            const today = localDateString(now);
-            if (slotsForDate(today).some(time => isSlotOpen(today, time))) return today;
-            const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-            return localDateString(tomorrow);
-        }
-
-        // เปิดหน้าค้างไว้จนรอบสุดท้ายของวันปิด (หรือข้ามเที่ยงคืน): ขยับวันที่เลือกไปวันแรกที่จองได้
-        function ensureBookableDate() {
-            const first = firstBookableDate();
-            const dateInput = document.getElementById('booking-date');
-            dateInput.min = first;
-            if (selectedDate < first) {
-                selectedDate = first;
-                dateInput.value = first;
-                selectedSeats = [];
-            }
-        }
-
         // วันเวลาที่โอนเริ่มต้นเป็น "ตอนนี้" ทุกครั้งที่เข้าขั้นชำระเงิน (ลูกค้ามักโอนตอนนั้น) แต่แก้ให้ตรงสลิปได้
-        // เดิมตั้งวันที่โอนเป็นวันฉายและแก้ไม่ได้ ถ้าจองล่วงหน้า วันที่ในชีตจะไม่ตรงกับสลิป ตรวจยอดยาก
+        // เดิมตั้งวันที่โอนเป็นวันฉายและแก้ไม่ได้ ถ้าจองล่วงหน้า วันที่ในชีตจะไม่ตรงกับสลิป ตรวจยาก
         function setDefaultPaymentTime() {
             const now = new Date();
             const payDate = document.getElementById('pay-date');
@@ -1698,53 +1939,87 @@ function posterFallback(img) {
                 String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
         }
 
-        // ปิดรับจองก่อนรอบฉายกี่นาที ต้องตรงกับ BOOKING_CUTOFF_MINUTES ใน Code.gs
-        const BOOKING_CUTOFF_MINUTES = 15;
-
-        // ใช้เวลาในเครื่องลูกค้า (ลูกค้าอยู่ในไทย) ถ้านาฬิกาเครื่องเพี้ยน Apps Script จะตรวจซ้ำด้วยเวลาจริงอีกครั้ง
-        function isSlotOpen(date, time) {
-            const showStart = new Date(`${date}T${time}:00`);
-            return showStart.getTime() - BOOKING_CUTOFF_MINUTES * 60 * 1000 > Date.now();
-        }
-
         /* ----------------------------------------------------
-         * Date, Showtime & Seat Logic
+         * Date, Showtime & Seat Logic (ขั้นเลือกวัน รอบ และที่นั่ง)
          * ---------------------------------------------------- */
-        function updateShowtimesAndSeats() {
-            if (!selectedDate) return;
-            ensureBookableDate();
-
+        // opts.keepSeats: ตารางรอบอัปเดตระหว่างลูกค้าเลือกที่นั่ง ถ้ายังเป็นรอบเดิม ไม่ต้องล้างผังที่นั่ง
+        function updateShowtimesAndSeats(opts) {
+            if (!selectedMovie) return;
+            const before = selectedDate + '|' + selectedTime;
             const badge = document.getElementById('date-type-badge');
+            const dateBox = document.getElementById('date-chips');
             const timeContainer = document.getElementById('showtime-slots');
+            const dates = movieShowDates(selectedMovie.id);
 
-            const slots = slotsForDate(selectedDate);
-            // ดูจากวันในสัปดาห์ ไม่ใช่จำนวนรอบ (เดิมเช็ก "3 รอบ = เสาร์–อาทิตย์" พอเปลี่ยนรอบฉาย ป้ายเลยสลับกัน)
-            // จำนวนรอบนับจากรอบจริง เปลี่ยนรอบฉายใน slotsForDate แล้วป้ายถูกเอง
-            const day = new Date(selectedDate + 'T00:00:00').getDay();
-            badge.innerText = (day === 0 || day === 6)
-                ? `📅 วันเสาร์ - อาทิตย์ (เปิดบริการ ${slots.length} รอบ)`
-                : `📅 วันธรรมดา จันทร์ - ศุกร์ (เปิดบริการ ${slots.length} รอบ)`;
+            if (!dates.length) {
+                selectedDate = '';
+                selectedTime = '';
+                dateBox.innerHTML = '';
+                dateBox.dataset.shown = '';
+                updateDateArrows();
+                badge.innerText = '';
+                const waiting = !scheduleLoaded && !SCHEDULE.length;
+                timeContainer.innerHTML = waiting && !scheduleError
+                    ? '<p class="text-sm text-zinc-400">กำลังโหลดรอบฉาย…</p>'
+                    : waiting
+                        ? `<p class="text-sm text-brand-gold">${escapeHtml(scheduleError)} <button type="button" onclick="loadSchedule()" class="underline ml-1">ลองอีกครั้ง</button></p>`
+                        : '<p class="text-sm text-brand-gold">เรื่องนี้ยังไม่มีรอบเปิดจอง (เร็วๆ นี้) กรุณาเลือกเรื่องอื่น</p>';
+            } else {
+                // วันที่ส่งมาไม่มีรอบแล้ว (หรือยังไม่ได้เลือก): ไปวันที่ฉายถัดไปที่ยังมีที่นั่ง
+                if (!dates.includes(selectedDate)) {
+                    const next = nextBookableShow(selectedMovie.id);
+                    selectedDate = next ? next.date : dates[0];
+                }
+                // ข้ามเดือน: ใส่ป้ายชื่อเดือนคั่นก่อนวันแรกของแต่ละเดือน (ผู้ใช้ขอ 31 ต.ค. 2569) มีเดือนเดียวไม่ต้องใส่
+                const multiMonth = new Set(dates.map(d => d.slice(0, 7))).size > 1;
+                dateBox.innerHTML = dates.map((d, i) => {
+                    const shows = openShows(selectedMovie.id, d);
+                    const full = shows.every(isSoldOut);
+                    const active = d === selectedDate;
+                    const monthLabel = multiMonth && (i === 0 || dates[i - 1].slice(0, 7) !== d.slice(0, 7))
+                        ? `<div class="flex-shrink-0 self-stretch flex items-center pr-1 text-xs font-bold text-brand-gold whitespace-nowrap ${i ? 'pl-2 ml-1 border-l border-zinc-700' : ''}">${monthName(d)}</div>`
+                        : '';
+                    return monthLabel + `<button type="button" data-date="${d}" onclick="selectShowDate('${d}')" class="flex-shrink-0 min-w-[68px] px-3 py-2 rounded-xl border text-center leading-tight transition ${active
+                        ? 'bg-brand-red text-white border-brand-gold shadow-lg'
+                        : 'bg-zinc-900 text-zinc-300 border-zinc-700 hover:border-zinc-500'}">
+                        <span class="block text-[11px]">${dayLabel(d)}</span>
+                        <span class="block text-sm font-bold">${dayMonth(d)}</span>
+                        <span class="block text-[10px] ${full ? 'text-red-400 font-bold' : active ? 'text-white/80' : 'text-zinc-500'}">${full ? 'เต็ม' : shows.length + ' รอบ'}</span>
+                    </button>`;
+                }).join('');
+                // วันที่เลือกอยู่ไกลเกินจอ (เช่น กดเวลาจากหน้าแรกที่เป็นวันท้ายๆ): เลื่อนแถวให้เห็น ทำเฉพาะตอนวันที่เปลี่ยน
+                // จะได้ไม่กระตุกกลับตอนตารางรอบอัปเดตระหว่างลูกค้ากำลังเลื่อนดูวันอื่น
+                if (dateBox.dataset.shown !== selectedMovie.id + '|' + selectedDate) {
+                    dateBox.dataset.shown = selectedMovie.id + '|' + selectedDate;
+                    const chip = dateBox.querySelector(`[data-date="${selectedDate}"]`);
+                    if (chip) dateBox.scrollTo({ left: Math.max(0, chip.offsetLeft - dateBox.clientWidth / 2 + chip.offsetWidth / 2), behavior: 'auto' });
+                }
+                updateDateArrows();
 
-            // รอบที่เหลือไม่ถึง 15 นาทีก่อนฉาย (หรือฉายไปแล้ว) กดไม่ได้
-            const openSlots = slots.filter(time => isSlotOpen(selectedDate, time));
-            if (!openSlots.includes(selectedTime)) {
-                if (selectedTime) selectedSeats = []; // รอบที่เลือกไว้ปิดแล้ว ที่นั่งที่เลือกไว้ใช้ไม่ได้
-                selectedTime = openSlots[0] || '';
+                const shows = openShows(selectedMovie.id, selectedDate);
+                const available = shows.filter(s => !isSoldOut(s));
+                // รอบที่เลือกไว้หายไปหรือปิดแล้ว: เลือกรอบแรกที่ยังมีที่นั่ง
+                // (รอบที่เลือกไว้แล้วเพิ่งเต็ม ยังคงเลือกไว้ ผังจะแสดงว่าเต็ม ไม่สลับรอบให้ลูกค้างง)
+                if (!shows.some(s => s.time === selectedTime)) selectedTime = available[0] ? available[0].time : '';
+                badge.innerText = `📅 ${thaiDateText(selectedDate)} · ฉาย ${shows.length} รอบ` + (available.length ? '' : ' (เต็มทุกรอบ)');
+                timeContainer.innerHTML = shows.map(s => {
+                    const sold = isSoldOut(s);
+                    const active = s.time === selectedTime;
+                    if (sold && !active) {
+                        return `<button type="button" disabled class="px-5 py-2.5 rounded-xl font-bold text-sm border bg-zinc-950 text-zinc-600 border-zinc-900 cursor-not-allowed">
+                            <i class="fa-regular fa-clock mr-1.5"></i><span class="line-through">${s.time} น.</span>
+                            <span class="ml-1 text-[10px] font-extrabold text-red-400 no-underline">SOLD OUT</span></button>`;
+                    }
+                    return `<button type="button" onclick="selectTimeSlot('${s.time}')" class="px-5 py-2.5 rounded-xl font-bold text-sm transition border ${active ? 'bg-brand-red text-white border-brand-gold shadow-lg scale-105' : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-600'}">
+                        <i class="fa-regular fa-clock mr-1.5"></i> ${s.time} น.${sold ? ' <span class="ml-1 text-[10px] font-extrabold text-yellow-200">SOLD OUT</span>' : ''}
+                    </button>`;
+                }).join('') + (available.length ? '' : `
+                    <p class="w-full text-xs text-brand-gold mt-2">รอบของวันนี้เต็มแล้ว กรุณาเลือกวันอื่น</p>`);
             }
 
-            timeContainer.innerHTML = slots.map(time => {
-                if (!openSlots.includes(time)) {
-                    return `
-                <button type="button" disabled class="px-5 py-2.5 rounded-xl font-bold text-sm border bg-zinc-950 text-zinc-600 border-zinc-900 cursor-not-allowed line-through">
-                    <i class="fa-regular fa-clock mr-1.5"></i> ${time} น.
-                </button>`;
-                }
-                return `
-                <button type="button" onclick="selectTimeSlot('${time}')" class="px-5 py-2.5 rounded-xl font-bold text-sm transition border ${selectedTime === time ? 'bg-brand-red text-white border-brand-gold shadow-lg scale-105' : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-600'}">
-                    <i class="fa-regular fa-clock mr-1.5"></i> ${time} น.
-                </button>`;
-            }).join('') + (openSlots.length ? '' : `
-                <p class="w-full text-xs text-brand-gold mt-2">รอบของวันนี้ปิดรับจองแล้ว (ปิดก่อนฉาย ${BOOKING_CUTOFF_MINUTES} นาที) กรุณาเลือกวันถัดไป</p>`);
+            const after = selectedDate + '|' + selectedTime;
+            if (opts && opts.keepSeats && before === after) return;
+            if (before !== after) selectedSeats = []; // เปลี่ยนวันหรือรอบ ที่นั่งที่เลือกไว้ใช้ไม่ได้
 
             seatAvailabilityLoaded = false;
             serverBookedSeats = [];
@@ -1755,15 +2030,22 @@ function posterFallback(img) {
             // Refresh from the shared Google Sheet while the booking page is open.
             if (seatRefreshTimer) clearInterval(seatRefreshTimer);
             seatRefreshTimer = setInterval(() => {
-                if (currentStep !== 2 || !selectedMovie || !selectedDate) return;
-                // ลูกค้าเปิดหน้าค้างไว้จนรอบที่เลือกปิดรับจอง หรือรอบของวันนี้ปิดหมด:
-                // วาดใหม่ (จะเลือกรอบถัดไปหรือเลื่อนไปพรุ่งนี้ให้เอง)
-                if (selectedDate < firstBookableDate() || !selectedTime || !isSlotOpen(selectedDate, selectedTime)) {
+                if (currentStep !== 2 || !selectedMovie) return;
+                // ลูกค้าเปิดหน้าค้างไว้จนรอบที่เลือกปิดรับจอง (เลย 15 นาทีหลังหนังเริ่ม): วาดใหม่ จะเลือกรอบหรือวันถัดไปให้เอง
+                if (!selectedTime || !isSlotOpen(selectedDate, selectedTime)) {
                     updateShowtimesAndSeats();
                     return;
                 }
                 loadBookedSeatsForCurrentSlot();
             }, 15000);
+        }
+
+        function selectShowDate(date) {
+            if (date === selectedDate) return;
+            selectedDate = date;
+            selectedTime = '';
+            selectedSeats = [];
+            updateShowtimesAndSeats();
         }
 
         function selectTimeSlot(time) {
@@ -1823,6 +2105,9 @@ function posterFallback(img) {
                 }
                 serverBookedSeats = result.seats.map(String);
                 seatAvailabilityLoaded = true;
+                // อัปเดตจำนวนที่นั่งที่ถูกจองของรอบนี้ในตารางด้วย (ปุ่มรอบอื่นและหน้าแรกจะขึ้น SOLD OUT ตรงกับผังจริง)
+                const show = SCHEDULE.find(s => s.movieId === movieId && s.date === date && s.time === time);
+                if (show) show.booked = serverBookedSeats.length;
                 selectedSeats = selectedSeats.filter(seat => !serverBookedSeats.includes(seat));
                 renderSeatGrid();
                 updateSeatSummary();
@@ -1844,7 +2129,7 @@ function posterFallback(img) {
             // ไม่มีรอบที่เปิดรับจองในวันนี้ ไม่ต้องแสดงผังที่นั่ง (และไม่ต้องขึ้นเตือนว่าโหลดไม่ได้)
             if (!selectedTime) {
                 if (warning) warning.textContent = '';
-                layout.innerHTML = '<p class="text-center text-sm text-zinc-400 py-10">กรุณาเลือกวันที่มีรอบเปิดรับจอง</p>';
+                layout.innerHTML = '<p class="text-center text-sm text-zinc-400 py-10">กรุณาเลือกวันและรอบฉายที่ยังมีที่นั่ง</p>';
                 return;
             }
 
@@ -2026,7 +2311,7 @@ function posterFallback(img) {
             document.getElementById('total-price-text').innerText = `${totalPrice.toLocaleString()} ฿`;
 
             // Step 3 preview updates
-            document.getElementById('summary-date').innerText = selectedDate;
+            document.getElementById('summary-date').innerText = selectedDate ? thaiDateText(selectedDate) : '-';
             document.getElementById('summary-time').innerText = `${selectedTime} น.`;
             document.getElementById('summary-seats').innerText = seatsText;
             document.getElementById('summary-count').innerText = `${selectedSeats.length} ที่นั่ง`;
@@ -2077,6 +2362,12 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
                 }
             }
 
+            // กลับหน้าแรก: วาดการ์ดหนังใหม่ด้วยตารางรอบล่าสุด (รอบที่ปิด/เต็มระหว่างนั้นจะได้ไม่ค้าง)
+            if (step === 1) {
+                renderHomeDates();
+                renderMovies();
+            }
+
             // สร้างเลขจองใหม่ทุกครั้งที่เข้าขั้นตอนชำระเงิน (กลับไปเลือกที่นั่งใหม่ = รายการใหม่)
             if (step === 3) {
                 currentBookingId = makeBookingId();
@@ -2107,30 +2398,35 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
 
         /* ----------------------------------------------------
          * บันทึกใบจองเป็นรูปภาพ (แทนปุ่มพิมพ์/PDF เดิม)
-         * วาดการ์ดสีแยกจากหน้าจอ (ขนาดพอดีจอมือถือ ไม่มีปุ่ม) แล้วถ่ายเป็น PNG ด้วย html2canvas
+         * วาดใบจองลง canvas เองทีละส่วน (เปลี่ยนจาก html2canvas 30 ต.ค. 2569 ตามที่คอนเสิร์ตแก้ไปแล้ว)
+         * เหตุผล:
+         * • html2canvas ถ่ายรูปจากหน้าเว็บ ถ้า Android ตั้งตัวหนังสือใหญ่ (ในเครื่องหรือในแอป LINE)
+         *   ตัวหนังสือในรูปจะเลื่อนหลุดกรอบ วาดเองด้วยขนาด px ตายตัว การตั้งค่าเครื่องจึงไม่มีผล
+         * • html2canvas รอรูปทุกรูปในหน้าโหลดเสร็จโดยไม่มีเวลาหมด ปกหนังในหน้าแรกโหลดแบบ lazy
+         *   ถ้ายังไม่ได้โหลดแล้วหน้าแรกถูกซ่อน ปุ่มบน iPhone จะหมุนค้าง (ทดสอบบน WebKit แล้วค้างจริง)
+         * • ไม่ต้องโหลดไลบรารีเพิ่ม
+         * หน้าตาเหมือนใบจองแบบเดิม: พื้นดำแดง ขอบทอง ปกหนัง ตารางข้อมูลพร้อมไอคอน กล่องหมายเหตุ
          * ---------------------------------------------------- */
         let lastBooking = null;
         let bookingImageBlob = null;
         let bookingImagePromise = null;
-        const HTML2CANVAS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
 
-        // โหลดไลบรารีตอนจองสำเร็จเท่านั้น คนที่แค่เข้ามาดูหนังจะไม่ต้องโหลดไฟล์นี้ หน้าแรกจึงไม่ช้าลง
-        function loadHtml2Canvas() {
-            if (window.html2canvas) return Promise.resolve(window.html2canvas);
-            if (loadHtml2Canvas.promise) return loadHtml2Canvas.promise;
-            loadHtml2Canvas.promise = new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = HTML2CANVAS_URL;
-                script.onload = () => resolve(window.html2canvas);
-                script.onerror = () => { loadHtml2Canvas.promise = null; reject(new Error('โหลดตัวสร้างรูปไม่สำเร็จ')); };
-                document.head.appendChild(script);
-            });
-            return loadHtml2Canvas.promise;
-        }
+        const BOOKING_IMG = {
+            width: 540,     // ความกว้างที่ออกแบบ (px) พอดีจอมือถือเมื่อเปิดดูรูป
+            scale: 2,       // วาดจริง 2 เท่า (1080 px) ให้คมบนจอมือถือ
+            gold: '#D4AF37', light: '#FFD65A', gray: '#a1a1aa', white: '#ffffff',
+            font: "'Prompt', sans-serif",
+            // ไอคอน Font Awesome ที่หน้าเว็บโหลดอยู่แล้ว วาดลง canvas เป็นตัวอักษรได้เมื่อฟอนต์โหลดเสร็จ
+            icon: '"Font Awesome 6 Free"'
+        };
+        const BOOKING_ICONS = {
+            ticket: '', user: '', calendar: '', clock: '', couch: '',
+            money: '', hourglass: '', info: '', film: ''
+        };
 
-        // แปลงปกเป็น data URL ก่อนใส่ในรูป ถ้าปกมาจากเว็บอื่นที่ไม่อนุญาต (เช่นบางไฟล์ใน Google Drive)
-        // เบราว์เซอร์จะไม่ยอมให้บันทึกรูปทั้งใบ จึงตรวจตรงนี้ก่อน ใช้ไม่ได้ = ใช้กรอบชื่อเรื่องแทนปก
-        function posterDataUrl(src) {
+        // โหลดปกหนังมาวาดในรูป ถ้าปกมาจากเว็บอื่นที่ไม่อนุญาต (เช่นบางไฟล์ใน Google Drive)
+        // เบราว์เซอร์จะไม่ยอมให้บันทึกรูปทั้งใบ จึงทดลองอ่านพิกเซลก่อน ใช้ไม่ได้ = ใช้กรอบชื่อเรื่องแทนปก
+        function loadPosterImage(src) {
             return new Promise(resolve => {
                 if (!src) { resolve(null); return; }
                 const img = new Image();
@@ -2140,11 +2436,10 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
                 img.onload = () => {
                     clearTimeout(timer);
                     try {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = img.naturalWidth;
-                        canvas.height = img.naturalHeight;
-                        canvas.getContext('2d').drawImage(img, 0, 0);
-                        resolve(canvas.toDataURL('image/jpeg', 0.9));
+                        const test = document.createElement('canvas').getContext('2d');
+                        test.drawImage(img, 0, 0, 1, 1);
+                        test.getImageData(0, 0, 1, 1);
+                        resolve(img);
                     } catch (err) {
                         resolve(null);
                     }
@@ -2164,70 +2459,340 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
             return 'วัน' + days[d.getDay()] + 'ที่ ' + Number(m[3]) + ' ' + months[Number(m[2]) - 1] + ' ' + (Number(m[1]) + 543);
         }
 
-        // การ์ดสำหรับถ่ายเป็นรูป: ใช้ style ในตัวทั้งหมด (ไม่พึ่ง Tailwind) หน้าตาจะเหมือนกันทุกเครื่อง
-        // ห้ามใส่ letter-spacing กับข้อความภาษาไทย html2canvas จะวางสระ/วรรณยุกต์เพี้ยน
-        function bookingImageHtml(b, poster) {
-            const gold = '#D4AF37', light = '#FFD65A';
-            const row = (icon, label, value, color) => `
-                <div style="display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px solid rgba(212,175,55,.22);">
-                    <div style="width:26px;text-align:center;color:${gold};font-size:18px;padding-top:2px;"><i class="fa-solid ${icon}"></i></div>
-                    <div style="width:118px;color:#a1a1aa;font-size:17px;">${label}</div>
-                    <div style="flex:1;min-width:0;color:${color || '#fff'};font-size:18px;font-weight:600;line-height:1.5;word-break:break-word;">${value}</div>
-                </div>`;
-            const posterBox = poster
-                ? `<div style="width:210px;height:315px;margin:0 auto;border-radius:16px;border:3px solid ${gold};
-                        background:#111 url('${poster}') center/cover no-repeat;box-shadow:0 14px 34px rgba(0,0,0,.6);"></div>`
-                : `<div style="width:210px;height:315px;margin:0 auto;border-radius:16px;border:3px solid ${gold};
-                        background:linear-gradient(160deg,#3a0d16,#0b0b0d);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;text-align:center;">
-                        <i class="fa-solid fa-film" style="color:${gold};font-size:46px;margin-bottom:16px;"></i>
-                        <div style="color:#fff;font-size:22px;font-weight:700;line-height:1.35;word-break:break-word;">${escapeHtml(b.movie)}</div>
-                   </div>`;
-            const meta = [b.genre, b.duration].filter(Boolean).map(escapeHtml).join(' · ');
-            return `
-            <div style="width:540px;font-family:'Prompt',sans-serif;color:#fff;border-radius:28px;overflow:hidden;
-                    border:3px solid ${gold};
-                    background:radial-gradient(ellipse at 50% 0%, rgba(139,21,40,.55), transparent 58%), linear-gradient(180deg,#14090b 0%,#09090a 62%,#1a080c 100%);">
-                <div style="height:5px;background:linear-gradient(90deg,transparent,${gold},#FFF0A6,${gold},transparent);"></div>
-                <div style="padding:30px 34px 28px;">
-                    <div style="text-align:center;">
-                        <div style="font-size:30px;font-weight:700;letter-spacing:5px;">MAHAMIT <span style="color:${gold};">THEATER</span></div>
-                        <div style="font-size:11px;color:#a1a1aa;letter-spacing:4px;margin-top:6px;">CLASSIC &amp; MODERN CINEMA EXPERIENCE</div>
-                        <div style="display:inline-block;margin-top:18px;padding:7px 18px;border-radius:999px;border:1px solid ${gold};
-                                background:rgba(212,175,55,.12);color:${light};font-size:15px;font-weight:600;">
-                            <i class="fa-solid fa-hourglass-half" style="margin-right:6px;"></i>ใบจอง · รอตรวจสอบการชำระเงิน
-                        </div>
-                    </div>
-                    <div style="margin-top:24px;">${posterBox}</div>
-                    <div style="text-align:center;margin-top:20px;">
-                        <div style="font-size:28px;font-weight:700;line-height:1.3;word-break:break-word;">${escapeHtml(b.movie)}</div>
-                        ${meta ? `<div style="font-size:15px;color:#a1a1aa;margin-top:6px;">${meta}</div>` : ''}
-                    </div>
-                    <div style="margin-top:20px;padding:6px 20px 4px;border-radius:18px;background:rgba(15,15,17,.92);border:1px solid rgba(212,175,55,.75);">
-                        ${row('fa-ticket', 'เลขที่การจอง', escapeHtml(b.bookingId), light)}
-                        ${row('fa-user', 'ชื่อผู้จอง', escapeHtml(b.name))}
-                        ${row('fa-calendar-days', 'วันฉาย', escapeHtml(thaiDateText(b.date)))}
-                        ${row('fa-clock', 'รอบฉาย', escapeHtml(b.time) + ' น.')}
-                        ${row('fa-couch', 'ที่นั่ง', escapeHtml(b.seats.join(', ')) + ` <span style="color:#a1a1aa;font-weight:400;font-size:15px;">(${b.seats.length} ที่นั่ง)</span>`, light)}
-                        <div style="display:flex;align-items:flex-start;gap:14px;padding:16px 0 14px;">
-                            <div style="width:26px;text-align:center;color:${gold};font-size:18px;padding-top:6px;"><i class="fa-solid fa-money-bill-wave"></i></div>
-                            <div style="width:118px;color:#a1a1aa;font-size:17px;padding-top:4px;">ยอดชำระ</div>
-                            <div style="flex:1;">
-                                <div style="color:${light};font-size:28px;font-weight:700;line-height:1.2;">${Number(b.amount).toLocaleString()} บาท</div>
-                                ${b.discountText ? `<div style="color:#34d399;font-size:14px;margin-top:4px;">${escapeHtml(b.discountText)}</div>` : ''}
-                            </div>
-                        </div>
-                    </div>
-                    <div style="margin-top:18px;padding:14px 16px;border-radius:14px;background:rgba(139,21,40,.25);border:1px solid rgba(212,175,55,.45);
-                            display:flex;gap:12px;align-items:flex-start;">
-                        <i class="fa-solid fa-circle-info" style="color:${light};font-size:20px;padding-top:3px;"></i>
-                        <div style="font-size:14px;line-height:1.7;color:#e4e4e7;">
-                            <b style="color:${light};">ใบจองนี้ยังไม่ใช่บัตรเข้าชม</b><br>
-                            QR Code เข้าชมจะส่งทางอีเมล<br>หลังแอดมินตรวจสอบการชำระเงินแล้ว
-                        </div>
-                    </div>
-                    <div style="text-align:center;font-size:11px;color:#71717a;letter-spacing:3px;margin-top:22px;">MAHAMIT THEATER</div>
-                </div>
-            </div>`;
+        // แบ่งข้อความเป็นคำ เพื่อตัดบรรทัดไม่ให้คำภาษาไทยขาดกลางคำ หรือสระ/วรรณยุกต์แยกจากตัวอักษร
+        function splitTextUnits(text) {
+            if (window.Intl && Intl.Segmenter) {
+                return Array.from(new Intl.Segmenter('th', { granularity: 'word' }).segment(text), s => s.segment);
+            }
+            return splitTextChars(text);
+        }
+        // ตัดทีละตัวอักษร (เบราว์เซอร์เก่า หรือคำเดียวยาวเกินบรรทัด) โดยรวมสระบน/ล่างและวรรณยุกต์ไว้กับตัวหน้า
+        function splitTextChars(text) {
+            return String(text).match(/[^ัิ-ฺ็-๎][ัิ-ฺ็-๎]*/g) || [];
+        }
+
+        function wrapCanvasText(ctx, text, maxWidth) {
+            const lines = [];
+            let line = '';
+            const push = unit => {
+                if (line && ctx.measureText(line + unit).width > maxWidth) {
+                    lines.push(line.trimEnd());
+                    line = unit.trimStart();
+                } else {
+                    line += unit;
+                }
+            };
+            splitTextUnits(String(text || '')).forEach(unit => {
+                if (ctx.measureText(unit).width > maxWidth) splitTextChars(unit).forEach(push);
+                else push(unit);
+            });
+            if (line) lines.push(line);
+            return lines.length ? lines : [''];
+        }
+
+        function roundRectPath(ctx, x, y, w, h, r) {
+            // เขียนเองแทน ctx.roundRect เพราะ iPhone รุ่นเก่า (iOS 15) ยังไม่มีคำสั่งนี้
+            r = Math.min(r, w / 2, h / 2);
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+        }
+
+        // ความกว้างข้อความอังกฤษที่เว้นระยะตัวอักษร (เหมือน CSS letter-spacing ที่บวกหลังทุกตัว)
+        // ใช้กับข้อความอังกฤษเท่านั้น ห้ามใช้กับภาษาไทย (สระ/วรรณยุกต์จะแยกจากตัวอักษร)
+        function spacedTextWidth(ctx, text, spacing) {
+            return ctx.measureText(text).width + spacing * text.length;
+        }
+
+        /**
+         * จัดวางใบจองเป็นรายการคำสั่งวาด (ยังไม่วาด) แล้วคืนความสูงรวม
+         * แยกขั้นจัดวางกับขั้นวาด เพราะต้องรู้ความสูงทั้งใบก่อนสร้าง canvas
+         * ขนาดและระยะทั้งหมดเท่ากับการ์ดแบบเดิม (ที่เคยเขียนเป็น HTML ให้ html2canvas ถ่าย)
+         */
+        function layoutBookingImage(ctx, b, poster, hasIcons) {
+            const C = BOOKING_IMG;
+            const W = C.width;
+            const ops = [];
+            const font = (weight, size) => `${weight} ${size}px ${C.font}`;
+            const iconFont = size => `900 ${size}px ${C.icon}`;
+            const measure = (text, f) => { ctx.font = f; return ctx.measureText(text).width; };
+            // วางข้อความหลายบรรทัด: y คือขอบบนของบรรทัดแรก คืนค่าความสูงที่ใช้
+            const textBlock = (text, x, y, maxW, f, color, lh, align) => {
+                ctx.font = f;
+                const lines = wrapCanvasText(ctx, text, maxW);
+                lines.forEach((t, i) => ops.push({ t: 'text', text: t, x, y: y + i * lh, lh, font: f, color, align: align || 'left' }));
+                return lines;
+            };
+            // ไอคอน: ถ้าฟอนต์ไอคอนโหลดไม่ทัน ข้ามไปเลย (ดีกว่าขึ้นเป็นกล่องสี่เหลี่ยม)
+            const icon = (name, cx, y, size, lh, color) => {
+                if (hasIcons) ops.push({ t: 'text', text: BOOKING_ICONS[name], x: cx, y, lh, font: iconFont(size), color, align: 'center' });
+            };
+
+            const PAD_X = 3 + 34;            // ขอบทอง 3 + ระยะขอบใน 34
+            const contentW = W - PAD_X * 2;  // 466
+            let y = 3 + 5 + 30;              // ขอบทอง + แถบทองบนสุด 5 + ระยะขอบบน 30
+
+            // ---------- หัว: MAHAMIT THEATER (อังกฤษ เว้นระยะตัวอักษรได้) ----------
+            const titleFont = font(700, 30);
+            ctx.font = titleFont;
+            const part1 = 'MAHAMIT ', part2 = 'THEATER';
+            const w1 = spacedTextWidth(ctx, part1, 5), w2 = spacedTextWidth(ctx, part2, 5);
+            const titleX = (W - (w1 + w2)) / 2;
+            ops.push({ t: 'text', text: part1, x: titleX, y, lh: 45, font: titleFont, color: C.white, align: 'left', spacing: 5 });
+            ops.push({ t: 'text', text: part2, x: titleX + w1, y, lh: 45, font: titleFont, color: C.gold, align: 'left', spacing: 5 });
+            y += 45 + 6;
+            const subFont = font(400, 11), subText = 'CLASSIC & MODERN CINEMA EXPERIENCE';
+            ctx.font = subFont;
+            ops.push({ t: 'text', text: subText, x: (W - spacedTextWidth(ctx, subText, 4)) / 2, y, lh: 17, font: subFont, color: C.gray, align: 'left', spacing: 4 });
+            y += 17 + 18;
+
+            // ป้าย "ใบจอง · รอตรวจสอบการชำระเงิน"
+            const pillText = 'ใบจอง · รอตรวจสอบการชำระเงิน';
+            const pillFont = font(600, 15);
+            const iconW = hasIcons ? measure(BOOKING_ICONS.hourglass, iconFont(15)) + 6 : 0;
+            const pillW = Math.min(contentW, 1 + 18 + iconW + measure(pillText, pillFont) + 18 + 1);
+            const pillH = 39, pillX = (W - pillW) / 2;
+            ops.push({ t: 'rect', x: pillX, y, w: pillW, h: pillH, r: pillH / 2, fill: 'rgba(212,175,55,.12)', stroke: C.gold, lineWidth: 1 });
+            if (hasIcons) ops.push({ t: 'text', text: BOOKING_ICONS.hourglass, x: pillX + 19, y, lh: pillH, font: iconFont(15), color: C.light, align: 'left' });
+            ops.push({ t: 'text', text: pillText, x: pillX + 19 + iconW, y, lh: pillH, font: pillFont, color: C.light, align: 'left' });
+            y += pillH + 24;
+
+            // ---------- ปกหนัง 210×315 (ไม่มีปก = กรอบชื่อเรื่อง) ----------
+            const posterX = (W - 210) / 2;
+            if (poster) {
+                ops.push({ t: 'poster', img: poster, x: posterX, y, w: 210, h: 315 });
+            } else {
+                ops.push({ t: 'posterBox', x: posterX, y, w: 210, h: 315 });
+                // จัดไอคอนฟิล์ม + ชื่อเรื่องให้อยู่กลางกรอบ
+                ctx.font = font(700, 22);
+                const nameLines = wrapCanvasText(ctx, b.movie, 210 - 6 - 36);
+                const groupH = (hasIcons ? 46 + 16 : 0) + nameLines.length * 30;
+                let gy = y + (315 - groupH) / 2;
+                if (hasIcons) { icon('film', W / 2, gy, 46, 46, C.gold); gy += 46 + 16; }
+                nameLines.forEach((t, i) => ops.push({ t: 'text', text: t, x: W / 2, y: gy + i * 30, lh: 30, font: font(700, 22), color: C.white, align: 'center' }));
+            }
+            y += 315 + 20;
+
+            // ชื่อเรื่อง + ประเภท · ความยาว
+            y += textBlock(b.movie, W / 2, y, contentW, font(700, 28), C.white, 36, 'center').length * 36;
+            const meta = [b.genre, b.duration].filter(Boolean).join(' · ');
+            if (meta) {
+                y += 6;
+                y += textBlock(meta, W / 2, y, contentW, font(400, 15), C.gray, 23, 'center').length * 23;
+            }
+            y += 20;
+
+            // ---------- กล่องข้อมูลการจอง ----------
+            const boxX = PAD_X, boxW = contentW, boxTop = y;
+            const boxOpIndex = ops.length;   // กล่องต้องวาดก่อนข้อความข้างใน จึงจองตำแหน่งไว้ก่อน
+            const rowX = boxX + 1 + 20, rowW = boxW - 2 - 40;            // 424
+            const labelX = rowX + 26 + 14, valueX = labelX + 118 + 14;
+            const valueW = rowX + rowW - valueX;                          // 252
+            y += 1 + 6;
+            const row = (iconName, label, value, color, extra) => {
+                const top = y + 14;
+                icon(iconName, rowX + 13, top + 2, 18, 27, C.gold);
+                ops.push({ t: 'text', text: label, x: labelX, y: top, lh: 27, font: font(400, 17), color: C.gray, align: 'left' });
+                const valueFont = font(600, 18);
+                const lines = textBlock(value, valueX, top, valueW, valueFont, color || C.white, 27);
+                let rows = lines.length;
+                if (extra) {
+                    // ข้อความเสริม (เช่น "(2 ที่นั่ง)") ต่อท้ายบรรทัดสุดท้าย ถ้าไม่พอให้ขึ้นบรรทัดใหม่
+                    const extraFont = font(400, 15);
+                    const lastW = measure(lines[lines.length - 1], valueFont);
+                    const extraText = ' ' + extra;
+                    if (lastW + measure(extraText, extraFont) <= valueW) {
+                        ops.push({ t: 'text', text: extraText, x: valueX + lastW, y: top + (rows - 1) * 27, lh: 27, font: extraFont, color: C.gray, align: 'left' });
+                    } else {
+                        ops.push({ t: 'text', text: extra, x: valueX, y: top + rows * 27, lh: 27, font: extraFont, color: C.gray, align: 'left' });
+                        rows++;
+                    }
+                }
+                // ช่องไอคอนสูง 29 (เว้นบน 2 + บรรทัด 27) แถวบรรทัดเดียวจึงสูงตามช่องไอคอน
+                y = top + Math.max(rows * 27, 29) + 14;
+                ops.push({ t: 'rect', x: rowX, y, w: rowW, h: 1, fill: 'rgba(212,175,55,.22)' });
+                y += 1;
+            };
+            row('ticket', 'เลขที่การจอง', b.bookingId, C.light);
+            row('user', 'ชื่อผู้จอง', b.name);
+            row('calendar', 'วันฉาย', thaiDateText(b.date));
+            row('clock', 'รอบฉาย', b.time + ' น.');
+            row('couch', 'ที่นั่ง', b.seats.join(', '), C.light, '(' + b.seats.length + ' ที่นั่ง)');
+
+            // แถวยอดชำระ (ตัวเลขใหญ่ ไม่มีเส้นคั่นด้านล่าง)
+            const amountTop = y + 16;
+            icon('money', rowX + 13, amountTop + 6, 18, 27, C.gold);
+            ops.push({ t: 'text', text: 'ยอดชำระ', x: labelX, y: amountTop + 4, lh: 27, font: font(400, 17), color: C.gray, align: 'left' });
+            ops.push({ t: 'text', text: Number(b.amount).toLocaleString() + ' บาท', x: valueX, y: amountTop, lh: 34, font: font(700, 28), color: C.light, align: 'left' });
+            let amountH = 34;
+            if (b.discountText) {
+                amountH += 4;
+                amountH += textBlock(b.discountText, valueX, amountTop + amountH, valueW, font(400, 14), '#34d399', 21).length * 21;
+            }
+            y = amountTop + Math.max(amountH, 31) + 14;
+            y += 4 + 1;
+            ops.splice(boxOpIndex, 0, { t: 'rect', x: boxX, y: boxTop, w: boxW, h: y - boxTop, r: 18, fill: 'rgba(15,15,17,.92)', stroke: 'rgba(212,175,55,.75)', lineWidth: 1 });
+
+            // ---------- กล่องหมายเหตุ ----------
+            y += 18;
+            const noteTop = y;
+            const noteOpIndex = ops.length;
+            const noteTextX = boxX + 1 + 16 + (hasIcons ? 20 + 12 : 0);
+            const noteTextW = boxX + boxW - 1 - 16 - noteTextX;
+            y += 1 + 14;
+            icon('info', boxX + 1 + 16 + 10, y + 3, 20, 20, C.light);
+            y += textBlock('ใบจองนี้ยังไม่ใช่บัตรเข้าชม', noteTextX, y, noteTextW, font(700, 14), C.light, 24).length * 24;
+            y += textBlock('QR Code เข้าชมจะส่งทางอีเมล', noteTextX, y, noteTextW, font(400, 14), '#e4e4e7', 24).length * 24;
+            y += textBlock('หลังแอดมินตรวจสอบการชำระเงินแล้ว', noteTextX, y, noteTextW, font(400, 14), '#e4e4e7', 24).length * 24;
+            y += 14 + 1;
+            ops.splice(noteOpIndex, 0, { t: 'rect', x: boxX, y: noteTop, w: boxW, h: y - noteTop, r: 14, fill: 'rgba(139,21,40,.25)', stroke: 'rgba(212,175,55,.45)', lineWidth: 1 });
+
+            // ---------- ท้ายใบ ----------
+            y += 22;
+            const footFont = font(400, 11), footText = 'MAHAMIT THEATER';
+            ctx.font = footFont;
+            ops.push({ t: 'text', text: footText, x: (W - spacedTextWidth(ctx, footText, 3)) / 2, y, lh: 17, font: footFont, color: '#71717a', align: 'left', spacing: 3 });
+            y += 17 + 28 + 3;
+            return { ops, height: Math.ceil(y) };
+        }
+
+        function drawBookingImage(b, poster, hasIcons) {
+            const C = BOOKING_IMG;
+            const W = C.width;
+            const measureCtx = document.createElement('canvas').getContext('2d');
+            const { ops, height } = layoutBookingImage(measureCtx, b, poster, hasIcons);
+            const canvas = document.createElement('canvas');
+            canvas.width = W * C.scale;
+            canvas.height = height * C.scale;
+            const ctx = canvas.getContext('2d');
+            ctx.scale(C.scale, C.scale);
+
+            // พื้นใบจอง ตัดมุมโค้ง แล้ววาดทุกอย่างข้างในกรอบนี้
+            ctx.save();
+            roundRectPath(ctx, 0, 0, W, height, 28);
+            ctx.clip();
+            const bg = ctx.createLinearGradient(0, 0, 0, height);
+            bg.addColorStop(0, '#14090b');
+            bg.addColorStop(0.62, '#09090a');
+            bg.addColorStop(1, '#1a080c');
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, W, height);
+            // แสงแดงจากด้านบน (วงรีแบบ radial-gradient ellipse at 50% 0% ของ CSS เดิม)
+            const rx = W / 2 * Math.SQRT2, ry = height * Math.SQRT2;
+            ctx.save();
+            ctx.translate(W / 2, 0);
+            ctx.scale(1, ry / rx);
+            const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+            glow.addColorStop(0, 'rgba(139,21,40,.55)');
+            glow.addColorStop(0.58, 'rgba(139,21,40,0)');
+            ctx.fillStyle = glow;
+            ctx.fillRect(-W, 0, W * 2, rx);
+            ctx.restore();
+            // แถบทองบนสุด
+            const bar = ctx.createLinearGradient(3, 0, W - 3, 0);
+            bar.addColorStop(0, 'rgba(212,175,55,0)');
+            bar.addColorStop(0.25, C.gold);
+            bar.addColorStop(0.5, '#FFF0A6');
+            bar.addColorStop(0.75, C.gold);
+            bar.addColorStop(1, 'rgba(212,175,55,0)');
+            ctx.fillStyle = bar;
+            ctx.fillRect(3, 3, W - 6, 5);
+
+            ops.forEach(op => {
+                if (op.t === 'rect') {
+                    if (op.r) roundRectPath(ctx, op.x, op.y, op.w, op.h, op.r);
+                    else { ctx.beginPath(); ctx.rect(op.x, op.y, op.w, op.h); }
+                    ctx.fillStyle = op.fill;
+                    ctx.fill();
+                    if (op.stroke) {
+                        ctx.lineWidth = op.lineWidth || 1;
+                        ctx.strokeStyle = op.stroke;
+                        ctx.stroke();
+                    }
+                } else if (op.t === 'text') {
+                    ctx.font = op.font;
+                    ctx.fillStyle = op.color;
+                    // จัดกึ่งกลาง/ชิดขวาเอง แล้ววาดชิดซ้ายเสมอ ไม่ใช้ ctx.textAlign
+                    // เพราะ Safari บน iPhone บางเครื่องไม่จัดตำแหน่งข้อความภาษาไทยตาม textAlign
+                    // (คอนเสิร์ตเจอ 28 ต.ค. 2569: ข้อความไปเริ่มที่จุดกึ่งกลาง/ขอบขวาแทน)
+                    const textW = op.align === 'left' ? 0 : ctx.measureText(op.text).width;
+                    const textX = op.align === 'center' ? op.x - textW / 2
+                        : op.align === 'right' ? op.x - textW : op.x;
+                    ctx.textAlign = 'left';
+                    // 'middle' วางกลางความสูงบรรทัด ทุกเบราว์เซอร์ให้ผลตรงกัน
+                    ctx.textBaseline = 'middle';
+                    const midY = op.y + op.lh / 2;
+                    if (op.spacing) {
+                        // เว้นระยะตัวอักษรเอง (ข้อความอังกฤษเท่านั้น) เพราะ ctx.letterSpacing ยังไม่มีใน iPhone รุ่นเก่า
+                        let cx = textX;
+                        for (const ch of op.text) {
+                            ctx.fillText(ch, cx, midY);
+                            cx += ctx.measureText(ch).width + op.spacing;
+                        }
+                    } else {
+                        ctx.fillText(op.text, textX, midY);
+                    }
+                } else if (op.t === 'poster' || op.t === 'posterBox') {
+                    // กรอบทอง 3px มุมโค้ง 16 พร้อมเงา แล้ววาดปก (หรือพื้นไล่สี) ข้างในขอบ
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0,0,0,.6)';
+                    ctx.shadowBlur = 34;
+                    ctx.shadowOffsetY = 14;
+                    roundRectPath(ctx, op.x, op.y, op.w, op.h, 16);
+                    ctx.fillStyle = C.gold;
+                    ctx.fill();
+                    ctx.restore();
+                    const ix = op.x + 3, iy = op.y + 3, iw = op.w - 6, ih = op.h - 6;
+                    ctx.save();
+                    roundRectPath(ctx, ix, iy, iw, ih, 13);
+                    ctx.clip();
+                    if (op.t === 'poster') {
+                        // วางปกแบบ cover: ขยายให้เต็มกรอบแล้วตัดส่วนเกินตรงกลาง
+                        ctx.fillStyle = '#111';
+                        ctx.fillRect(ix, iy, iw, ih);
+                        const img = op.img;
+                        const s = Math.max(iw / img.naturalWidth, ih / img.naturalHeight);
+                        const sw = iw / s, sh = ih / s;
+                        ctx.drawImage(img, (img.naturalWidth - sw) / 2, (img.naturalHeight - sh) / 2, sw, sh, ix, iy, iw, ih);
+                    } else {
+                        // linear-gradient(160deg, #3a0d16, #0b0b0d) ของแบบเดิม
+                        const a = 160 * Math.PI / 180, dx = Math.sin(a), dy = -Math.cos(a);
+                        const half = (Math.abs(iw * dx) + Math.abs(ih * dy)) / 2;
+                        const cx = ix + iw / 2, cy = iy + ih / 2;
+                        const g = ctx.createLinearGradient(cx - dx * half, cy - dy * half, cx + dx * half, cy + dy * half);
+                        g.addColorStop(0, '#3a0d16');
+                        g.addColorStop(1, '#0b0b0d');
+                        ctx.fillStyle = g;
+                        ctx.fillRect(ix, iy, iw, ih);
+                    }
+                    ctx.restore();
+                }
+            });
+            ctx.restore();
+
+            // ขอบทองรอบใบ
+            roundRectPath(ctx, 1.5, 1.5, W - 3, height - 3, 26.5);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = C.gold;
+            ctx.stroke();
+            return canvas;
+        }
+
+        // ฟอนต์ไอคอนโหลดสำเร็จจริงหรือไม่ (ดูสถานะของฟอนต์โดยตรง)
+        // ใช้ document.fonts.check ไม่ได้ เพราะถ้าฟอนต์โหลดไม่สำเร็จ check ยังตอบ true (ทดสอบบน WebKit แล้ว)
+        // แล้วรูปจะมีกล่องสี่เหลี่ยมแทนไอคอน
+        function iconFontLoaded() {
+            let loaded = false;
+            if (document.fonts && document.fonts.forEach) {
+                document.fonts.forEach(f => {
+                    if (/Font Awesome 6 Free/.test(f.family) && String(f.weight) === '900' && f.status === 'loaded') loaded = true;
+                });
+            }
+            return loaded;
         }
 
         // สร้างรูปครั้งเดียวต่อการจอง (กดปุ่มซ้ำใช้รูปเดิม)
@@ -2236,21 +2801,26 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
             if (bookingImageBlob) return Promise.resolve(bookingImageBlob);
             if (bookingImagePromise) return bookingImagePromise;
             const booking = lastBooking;
+            const withTimeout = (promise, ms) => Promise.race([promise,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('สร้างรูปนานเกินไป')), ms))]);
+            // canvas ใช้ฟอนต์ได้เมื่อโหลดเสร็จแล้วเท่านั้น จึงสั่งโหลดฟอนต์ที่ใช้ (ตัวไทย อังกฤษ และไอคอน) ก่อนวาด
+            // รอไม่เกิน 3 วินาที ถ้ายังไม่เสร็จใช้ฟอนต์สำรองของเครื่องไปก่อน (และไม่วาดไอคอน) ดีกว่าให้ปุ่มค้าง
+            const sample = 'ใบจองรอตรวจสอบ MAHAMIT THEATER MT-0123456789 บาท';
+            const iconSample = Object.values(BOOKING_ICONS).join('');
+            const iconFontName = `900 18px ${BOOKING_IMG.icon}`;
+            const fontsReady = document.fonts && document.fonts.load
+                ? withTimeout(Promise.all([
+                    ...['400 15px Prompt', '600 18px Prompt', '700 28px Prompt'].map(f => document.fonts.load(f, sample)),
+                    document.fonts.load(iconFontName, iconSample)
+                ]), 3000).catch(() => null)
+                : Promise.resolve();
             // ปกที่แสดงบนหน้าจอเปิดได้แล้ว (posterFallback อาจสลับ .jpg/.png ให้) ใช้ที่อยู่นั้นก่อน
             const shown = document.getElementById('success-movie-poster');
             const posterSrc = (shown && shown.complete && shown.naturalWidth && shown.currentSrc) || booking.poster;
-            bookingImagePromise = Promise.all([loadHtml2Canvas(), posterDataUrl(posterSrc), document.fonts ? document.fonts.ready : null])
-                .then(([html2canvas, poster]) => {
-                    const holder = document.createElement('div');
-                    // วางไว้นอกจอ ลูกค้าไม่เห็น แต่เบราว์เซอร์ยังจัดหน้าให้ถ่ายรูปได้
-                    holder.style.cssText = 'position:fixed;left:-10000px;top:0;z-index:-1;';
-                    holder.innerHTML = bookingImageHtml(booking, poster);
-                    document.body.appendChild(holder);
-                    return html2canvas(holder.firstElementChild, { scale: 2, backgroundColor: null, useCORS: true, logging: false })
-                        .finally(() => holder.remove());
-                })
+            bookingImagePromise = withTimeout(Promise.all([loadPosterImage(posterSrc), fontsReady])
+                .then(([poster]) => drawBookingImage(booking, poster, iconFontLoaded()))
                 .then(canvas => new Promise((resolve, reject) =>
-                    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('สร้างรูปไม่สำเร็จ')), 'image/png')))
+                    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('สร้างรูปไม่สำเร็จ')), 'image/png'))), 20000)
                 .then(blob => {
                     // ลูกค้ากดกลับหน้าแรกไปจองใหม่ระหว่างสร้างรูป: ไม่เก็บรูปของการจองเก่า
                     if (lastBooking === booking) bookingImageBlob = blob;
@@ -2258,6 +2828,39 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
                 })
                 .finally(() => { bookingImagePromise = null; });
             return bookingImagePromise;
+        }
+
+        // แยกตามเครื่องว่าจะส่งรูปให้ลูกค้าแบบไหน (ใช้ทั้งปุ่มบันทึกใบจองและปุ่มบันทึก QR)
+        // • ในแอป LINE/Facebook/IG: หน้าแชร์และการดาวน์โหลดมักใช้ไม่ได้ → แสดงรูปเต็มจอให้กดค้าง
+        // • iPhone/iPad: หน้าแชร์มี "บันทึกรูปภาพ" เข้าแอปรูปภาพตรงๆ (ดาวน์โหลดจะไปอยู่ในแอปไฟล์ ลูกค้าหาไม่เจอ)
+        // • Android: หน้าแชร์ส่วนใหญ่ไม่มีปุ่มบันทึกลงแกลเลอรี → ดาวน์โหลดตรงๆ ไฟล์เข้า Download และขึ้นในแกลเลอรี
+        // • คอมพิวเตอร์: ดาวน์โหลดเป็นไฟล์
+        async function deliverImage(blob, fileName, shareTitle, showPreview) {
+            const ua = navigator.userAgent || '';
+            const inAppBrowser = /\bLine\/|FBAN|FBAV|FB_IAB|Instagram/i.test(ua);
+            const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            if (inAppBrowser) { showPreview(blob); return; }
+            if (isIOS) {
+                const file = new File([blob], fileName, { type: blob.type || 'image/png' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({ files: [file], title: shareTitle });
+                    } catch (err) {
+                        // ลูกค้ากดปิดหน้าแชร์เอง ไม่ต้องทำอะไร / เปิดหน้าแชร์ไม่ได้ ให้กดค้างที่รูปแทน
+                        if (!err || err.name !== 'AbortError') showPreview(blob);
+                    }
+                } else {
+                    showPreview(blob);
+                }
+                return;
+            }
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(() => { URL.revokeObjectURL(url); link.remove(); }, 1500);
         }
 
         async function saveBookingImage() {
@@ -2280,49 +2883,33 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
                     label.textContent = 'บันทึกใบจอง';
                 }
             }
-            // แยกตามเครื่อง (ผู้ใช้ขอ 20 ต.ค. 2569) เพราะแต่ละระบบบันทึกรูปลงคลังรูปได้ต่างกัน
-            // • ในแอป LINE/Facebook/IG: หน้าแชร์และการดาวน์โหลดมักใช้ไม่ได้ → แสดงรูปเต็มจอให้กดค้าง
-            // • iPhone/iPad: หน้าแชร์มี "บันทึกรูปภาพ" เข้าแอปรูปภาพตรงๆ (ดาวน์โหลดจะไปอยู่ในแอปไฟล์ ลูกค้าหาไม่เจอ)
-            // • Android: หน้าแชร์ส่วนใหญ่ไม่มีปุ่มบันทึกลงแกลเลอรี → ดาวน์โหลดตรงๆ ไฟล์เข้า Download และขึ้นในแกลเลอรี
-            // • คอมพิวเตอร์: ดาวน์โหลดเป็นไฟล์
-            const ua = navigator.userAgent || '';
-            const inAppBrowser = /\bLine\/|FBAN|FBAV|FB_IAB|Instagram/i.test(ua);
-            const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-            if (inAppBrowser) { showBookingImagePreview(blob); return; }
-            if (isIOS) {
-                const file = new File([blob], fileName, { type: 'image/png' });
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share({ files: [file], title: 'ใบจอง MAHAMIT THEATER' });
-                    } catch (err) {
-                        // ลูกค้ากดปิดหน้าแชร์เอง ไม่ต้องทำอะไร / เปิดหน้าแชร์ไม่ได้ ให้กดค้างที่รูปแทน
-                        if (!err || err.name !== 'AbortError') showBookingImagePreview(blob);
-                    }
-                } else {
-                    showBookingImagePreview(blob);
-                }
-                return;
-            }
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            setTimeout(() => { URL.revokeObjectURL(url); link.remove(); }, 1500);
+            // แยกตามเครื่อง (ผู้ใช้ขอ 20 ต.ค. 2569) ดูรายละเอียดใน deliverImage
+            await deliverImage(blob, fileName, 'ใบจอง MAHAMIT THEATER', showBookingImagePreview);
         }
 
-        // ทางสำรองบนมือถือ: แสดงรูปเต็มจอ ให้กดค้างที่รูปแล้วเลือก "บันทึกรูปภาพ"
-        function showBookingImagePreview(blob) {
+        // ข้อความบนหน้าแสดงรูปเต็มจอ (ใช้ทั้งใบจองและ QR)
+        // Android ในแอป LINE/Facebook มักไม่มีเมนู "บันทึกรูปภาพ" ตอนกดค้าง (คอนเสิร์ตเจอ 27 ต.ค. 2569) จึงบอกให้แคปหน้าจอแทน
+        function imagePreviewHint() {
+            return /Android/i.test(navigator.userAgent || '')
+                ? 'กดค้างที่รูปเพื่อบันทึก<br>ถ้าไม่มีเมนูบันทึก ให้แคปหน้าจอนี้ไว้'
+                : 'กดค้างที่รูป แล้วเลือก "บันทึกรูปภาพ"';
+        }
+
+        // ทางสำรองบนมือถือ (เช่น เปิดเว็บในแอป LINE/Facebook ที่เปิดหน้าแชร์ไม่ได้): แสดงรูปเต็มจอ ให้กดค้างเพื่อบันทึก
+        function showImagePreview(blob, alt, imgStyle) {
             const url = URL.createObjectURL(blob);
             const overlay = document.createElement('div');
             overlay.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:14px;';
             overlay.innerHTML = `
-                <p style="color:#FFD65A;font-size:15px;text-align:center;margin:0;">กดค้างที่รูป แล้วเลือก "บันทึกรูปภาพ"</p>
-                <img src="${url}" alt="ใบจอง" style="max-width:100%;max-height:78vh;border-radius:16px;">
+                <p style="color:#FFD65A;font-size:15px;text-align:center;margin:0;line-height:1.6;">${imagePreviewHint()}</p>
+                <img src="${url}" alt="${alt}" style="max-width:100%;max-height:78vh;border-radius:16px;${imgStyle || ''}">
                 <button type="button" style="background:#8b1528;color:#fff;border:1px solid #D4AF37;border-radius:12px;padding:10px 28px;font-weight:700;">ปิด</button>`;
             overlay.querySelector('button').onclick = () => { overlay.remove(); URL.revokeObjectURL(url); };
             document.body.appendChild(overlay);
+        }
+
+        function showBookingImagePreview(blob) {
+            showImagePreview(blob, 'ใบจอง');
         }
 
         // ล้างข้อมูลการจองครั้งก่อนให้เหมือนเพิ่งเปิดเว็บ (ผู้ใช้ขอ: จองเสร็จแล้วกลับหน้าแรก ข้อมูลเก่าต้องไม่ค้าง)
@@ -2337,12 +2924,10 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
             appliedDiscount = null;
             showDiscountMessage('', '');
             renderDiscountControls();
-            const first = firstBookableDate();
-            const dateInput = document.getElementById('booking-date');
-            dateInput.min = first;
-            dateInput.value = first;
-            selectedDate = first;
+            // วันและรอบเลือกใหม่ตอนกดหนัง (ไปวันที่ฉายถัดไปให้เอง) หน้าแรกกลับมาแสดงทุกเรื่อง
+            selectedDate = '';
             selectedTime = '';
+            homeDate = 'all';
             lastBooking = null;
             bookingImageBlob = null;
         }
@@ -2589,16 +3174,21 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
                 if (bookingResult) {
                     if (bookingResult.success !== true) {
                         const message = bookingResult.message || 'บันทึกการจองไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';
-                        // ที่นั่งถูกคนอื่นจองไปก่อน หรือรอบปิดรับจองระหว่างกรอกข้อมูล: พากลับไปเลือกใหม่
-                        // (ข้อความนี้มาจาก doPost / validateShowtime_ ใน Code.gs)
-                        if (message.includes('ถูกจองไปแล้ว') || message.includes('ปิดรับจองแล้ว')) {
+                        // ที่นั่งถูกคนอื่นจองไปก่อน / รอบปิดรับจองระหว่างกรอกข้อมูล / แอดมินลบรอบนี้ไปแล้ว:
+                        // พากลับไปเลือกใหม่ (ข้อความนี้มาจาก doPost / validateShowtime_ ใน Code.gs)
+                        if (message.includes('ถูกจองไปแล้ว') || message.includes('ปิดรับจองแล้ว') || message.includes('ไม่มีรอบฉายนี้')) {
                             hideBookingLoading();
                             submitBtn.disabled = false;
                             submitBtn.innerHTML = originalButtonHtml;
                             alert(message);
+                            // รอบปิดแล้วหรือไม่มีแล้ว: เอาออกจากตารางในเครื่องทันที (นาฬิกาเครื่องลูกค้าอาจยังบอกว่าเปิด)
+                            if (!message.includes('ถูกจองไปแล้ว')) {
+                                SCHEDULE = SCHEDULE.filter(s => !(s.movieId === selectedMovie.id && s.date === selectedDate && s.time === selectedTime));
+                            }
                             selectedSeats = [];
                             goToStep(2);
                             updateShowtimesAndSeats();
+                            loadSchedule(); // โหลดตารางล่าสุด (จำนวนที่นั่งว่างของแต่ละรอบ)
                             return;
                         }
                         throw new Error(message);
@@ -2610,12 +3200,13 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
 
                 // Refresh the shared seat state after the server confirms the booking row.
                 await loadBookedSeatsForCurrentSlot();
+                loadSchedule(); // ที่นั่งว่างของรอบนี้ลดลง (กลับหน้าแรกจะเห็น SOLD OUT ถ้าเต็ม)
 
                 document.getElementById('confirmed-booking-id').innerText = bookingId;
                 document.getElementById('confirmed-email').innerText = custEmail;
                 document.getElementById('confirmed-movie').innerText = selectedMovie.title;
                 document.getElementById('success-movie-poster').src = selectedMovie.poster;
-                document.getElementById('confirmed-datetime').innerText = `${selectedDate} เวลา ${selectedTime} น.`;
+                document.getElementById('confirmed-datetime').innerText = `${thaiDateText(selectedDate)} เวลา ${selectedTime} น.`;
                 document.getElementById('confirmed-seats').innerText = bookedSeats.join(', ');
                 document.getElementById('confirmed-amount').innerText = `${totalPrice.toLocaleString()} บาท`;
                 document.getElementById('confirmed-discount').innerText = discount > 0
@@ -2773,13 +3364,13 @@ function hideBookingLoading() {
             สามารถบันทึกรูปภาพเพื่อนำไปสแกนชำระเงินได้
         </p>
 
-        <a id="qr-download"
-           href="./promptpay-qr.png"
-           download="promptpay-qr.png"
-           class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#d4af37] px-4 py-3 font-bold text-black transition hover:bg-yellow-400">
+        <!-- เดิมเป็นลิงก์ดาวน์โหลด (<a download>) บน iPhone รูปไปอยู่ในแอปไฟล์ แอปธนาคารเปิดไม่ได้
+             และในแอป LINE/Facebook มักดาวน์โหลดไม่ได้ → เปลี่ยนเป็นปุ่มที่แยกตามเครื่อง (saveQrImage) แบบคอนเสิร์ต -->
+        <button type="button" id="qr-download" onclick="saveQrImage()"
+           class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#d4af37] px-4 py-3 font-bold text-black transition hover:bg-yellow-400 disabled:opacity-60 disabled:cursor-wait">
             <i class="fa-solid fa-download"></i>
-            บันทึก QR Code เพื่อชำระเงิน
-        </a>
+            <span>บันทึก QR Code เพื่อชำระเงิน</span>
+        </button>
 
         <button type="button"
                 onclick="closeQRModal()"
@@ -2794,16 +3385,67 @@ function openQRModal() {
     const qr = document.getElementById('promptpay-qr');
     const modal = document.getElementById('qr-modal');
     const modalImage = document.getElementById('qr-modal-image');
-    const downloadLink = document.getElementById('qr-download');
 
     if (!qr || !qr.src) return;
 
     modalImage.src = qr.src;
-    downloadLink.href = qr.src;
+    // โหลดไฟล์ QR เตรียมไว้ตั้งแต่เปิดหน้าต่าง: iPhone เปิดหน้าแชร์ได้เฉพาะเมื่อรูปพร้อมทันทีที่กดปุ่ม
+    prepareQrImage().catch(() => {});
 
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     document.body.style.overflow = 'hidden';
+}
+
+// ==========================================
+// ปุ่ม "บันทึก QR Code เพื่อชำระเงิน" (ยกมาจากคอนเสิร์ต 27 ต.ค. 2569)
+// ลูกค้าที่จองบนมือถือต้องบันทึก QR ลงแอปรูปภาพ แล้วเปิดในแอปธนาคารเพื่อโอน
+// ใช้ไฟล์ QR ตัวจริง (ไม่ใช่แคปหน้าจอ) รูปจึงคมชัดและสแกนได้แน่นอน
+// แยกตามเครื่องด้วย deliverImage แบบเดียวกับปุ่มบันทึกใบจอง
+// ==========================================
+const QR_IMAGE_FILE_NAME = 'QR-ชำระเงิน-MAHAMIT-THEATER.png';
+let qrImageBlob = null;
+let qrImagePromise = null;
+
+function prepareQrImage() {
+    if (qrImageBlob) return Promise.resolve(qrImageBlob);
+    if (qrImagePromise) return qrImagePromise;
+    const qr = document.getElementById('promptpay-qr');
+    qrImagePromise = fetch((qr && qr.src) || './promptpay-qr.png')
+        .then(res => {
+            if (!res.ok) throw new Error('โหลดรูป QR ไม่สำเร็จ');
+            return res.blob();
+        })
+        .then(blob => (qrImageBlob = blob))
+        .finally(() => { qrImagePromise = null; });
+    return qrImagePromise;
+}
+
+async function saveQrImage() {
+    const btn = document.getElementById('qr-download');
+    const label = btn.querySelector('span');
+    let blob = qrImageBlob;
+    if (!blob) {
+        // ปกติรูปโหลดเสร็จตั้งแต่เปิดหน้าต่าง จะมาถึงตรงนี้เมื่อเน็ตช้าหรือโหลดไม่สำเร็จ
+        btn.disabled = true;
+        label.textContent = 'กำลังโหลดรูป…';
+        try {
+            blob = await prepareQrImage();
+        } catch (err) {
+            console.error('QR image error:', err);
+            alert('บันทึกรูป QR ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่ หรือแคปหน้าจอ QR นี้ไว้แทน');
+            return;
+        } finally {
+            btn.disabled = false;
+            label.textContent = 'บันทึก QR Code เพื่อชำระเงิน';
+        }
+    }
+    await deliverImage(blob, QR_IMAGE_FILE_NAME, 'QR ชำระเงิน MAHAMIT THEATER', showQrImagePreview);
+}
+
+// ทางสำรอง: แสดงรูป QR เต็มจอ (พื้นขาว ให้สแกนได้) ให้กดค้างเพื่อบันทึก
+function showQrImagePreview(blob) {
+    showImagePreview(blob, 'QR Code ชำระเงิน', 'background:#fff;');
 }
 
 function closeQRModal() {
@@ -2940,7 +3582,7 @@ function acceptPrivacyFromModal() {
     // เลือกหัวข้อและไอคอนจากข้อความ (ใช้ได้กับ alert เดิมทุกจุดโดยไม่ต้องแก้แต่ละจุด)
     // เช็ก "ไม่สำเร็จ / ถูกจองไปแล้ว" ก่อน "กรุณา" เพราะข้อความผิดพลาดหลายอันมีคำว่ากรุณาต่อท้าย
     function styleFor(text) {
-        if (/ไม่สำเร็จ|ผิดพลาด|ถูกจองไปแล้ว|ปิดรับจองแล้ว|งดฉาย|หมดเวลา|ไม่ได้/.test(text)) {
+        if (/ไม่สำเร็จ|ผิดพลาด|ถูกจองไปแล้ว|ปิดรับจองแล้ว|ไม่มีรอบฉาย|งดฉาย|หมดเวลา|ไม่ได้/.test(text)) {
             return { heading: 'ไม่สามารถดำเนินการได้', icon: 'fa-solid fa-circle-exclamation', color: '#f87171', bg: '#3b1216' };
         }
         if (/สำเร็จ|เรียบร้อย/.test(text)) {
