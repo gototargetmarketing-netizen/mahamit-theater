@@ -1772,21 +1772,13 @@ function posterFallback(img) {
                 <button type="button" onclick="${onclick}" class="flex-shrink-0 min-w-[64px] px-3 py-2 rounded-xl border text-center leading-tight transition ${active
                     ? 'bg-brand-red text-white border-brand-gold shadow-lg'
                     : 'bg-zinc-900 text-zinc-300 border-zinc-700 hover:border-zinc-500'} ${dim && !active ? 'opacity-50' : ''}">${html}</button>`;
-            bar.innerHTML = chip(homeDate === 'all',
-                    '<span class="block text-[11px]">ดูทั้งหมด</span><span class="block text-sm font-bold">ทุกเรื่อง</span>', "setHomeDate('all')", false)
-                + days.map(d => {
-                    const n = moviesOn(d);
-                    return chip(homeDate === d,
-                        `<span class="block text-[11px]">${dayLabel(d)}</span><span class="block text-sm font-bold">${dayMonth(d)}</span>`
-                        + `<span class="block text-[10px] ${homeDate === d ? 'text-white/80' : 'text-zinc-500'}">${n ? n + ' เรื่อง' : 'ไม่มีรอบ'}</span>`,
-                        `setHomeDate('${d}')`, !n);
-                }).join('')
-                // วันอื่นนอกจาก 7 วันแรก: ปุ่ม "เลือกวันอื่น" หน้าตาเหมือนปุ่มวันอื่นๆ (ผู้ใช้ไม่อยากเห็น dd/mm/yyyy 31 ต.ค. 2569)
-                // ช่องวันที่จริงวางทับทั้งปุ่มแบบโปร่งใส แตะตรงไหนก็เปิดปฏิทินของเครื่อง
-                // ไม่ซ่อนด้วย display:none เพราะ iPhone เปิดปฏิทินจากช่องที่ซ่อนไว้ไม่ได้
-                // คอมกดที่ตัวช่องแล้วปฏิทินไม่เด้งเอง (ต้องกดที่ไอคอน) จึงเรียก showPicker() ช่วย
-                // เลือกวันแล้ววันนั้นจะขึ้นเป็นปุ่มในแถบ (ต่อจาก "ทุกเรื่อง") และถูกเลือกอยู่
-                + `<label class="relative flex-shrink-0 flex flex-col justify-center min-w-[84px] px-3 py-2 rounded-xl border bg-zinc-900 text-zinc-300 border-zinc-700 hover:border-zinc-500 text-center leading-tight cursor-pointer transition">
+            // วันอื่นนอกจาก 7 วันแรก: ปุ่ม "เลือกวันอื่น" หน้าตาเหมือนปุ่มวันอื่นๆ (ผู้ใช้ไม่อยากเห็น dd/mm/yyyy 31 ต.ค. 2569)
+            // วางไว้หน้าสุดของแถบ (ผู้ใช้ขอ 31 ต.ค.) บนมือถือแถบเลื่อนได้ ถ้าอยู่ท้ายสุดลูกค้ามักไม่เห็น
+            // ช่องวันที่จริงวางทับทั้งปุ่มแบบโปร่งใส แตะตรงไหนก็เปิดปฏิทินของเครื่อง
+            // ไม่ซ่อนด้วย display:none เพราะ iPhone เปิดปฏิทินจากช่องที่ซ่อนไว้ไม่ได้
+            // คอมกดที่ตัวช่องแล้วปฏิทินไม่เด้งเอง (ต้องกดที่ไอคอน) จึงเรียก showPicker() ช่วย
+            // เลือกวันแล้ววันนั้นจะขึ้นเป็นปุ่มในแถบ (ต่อจาก "ทุกเรื่อง") และถูกเลือกอยู่
+            const otherDayChip = `<label class="relative flex-shrink-0 flex flex-col justify-center min-w-[84px] px-3 py-2 rounded-xl border bg-zinc-900 text-zinc-300 border-zinc-700 hover:border-zinc-500 text-center leading-tight cursor-pointer transition">
                     <span class="block text-base text-brand-gold"><i class="fa-regular fa-calendar-days"></i></span>
                     <span class="block text-sm font-bold mt-0.5">เลือกวันอื่น</span>
                     <input type="date" id="home-date-input" aria-label="เลือกวันอื่นจากปฏิทิน" min="${today}" max="${addDays(today, SCHEDULE_DAYS_AHEAD)}" value="${homeDate === 'all' ? '' : homeDate}"
@@ -1794,6 +1786,16 @@ function posterFallback(img) {
                         onclick="try { this.showPicker(); } catch (e) {}"
                         class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
                 </label>`;
+            bar.innerHTML = otherDayChip
+                + chip(homeDate === 'all',
+                    '<span class="block text-[11px]">ดูทั้งหมด</span><span class="block text-sm font-bold">ทุกเรื่อง</span>', "setHomeDate('all')", false)
+                + days.map(d => {
+                    const n = moviesOn(d);
+                    return chip(homeDate === d,
+                        `<span class="block text-[11px]">${dayLabel(d)}</span><span class="block text-sm font-bold">${dayMonth(d)}</span>`
+                        + `<span class="block text-[10px] ${homeDate === d ? 'text-white/80' : 'text-zinc-500'}">${n ? n + ' เรื่อง' : 'ไม่มีรอบ'}</span>`,
+                        `setHomeDate('${d}')`, !n);
+                }).join('');
             if (note) {
                 if (scheduleError && !SCHEDULE.length) {
                     note.innerHTML = `${escapeHtml(scheduleError)} <button type="button" onclick="loadSchedule()" class="underline text-brand-gold ml-1">ลองอีกครั้ง</button>`;
