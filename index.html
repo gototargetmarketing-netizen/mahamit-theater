@@ -951,6 +951,8 @@ function posterFallback(img) {
                         <span id="selected-movie-genre" class="text-xs bg-brand-red/30 text-brand-gold px-2 py-0.5 rounded border border-brand-red/50">Genre</span>
                         <h3 id="selected-movie-title" class="text-xl font-bold text-white mt-1">Movie Title</h3>
                         <p class="text-xs text-brand-lightGray mt-1"><i class="fa-regular fa-clock mr-1"></i> <span id="selected-movie-duration">120 นาที</span> | ราคาตั๋ว 100 บาท/ที่นั่ง</p>
+                        <!-- เสียง/ซับ (แอดมินกรอกในแท็บหนัง ไม่กรอก = ซ่อน) -->
+                        <p id="selected-movie-audio-row" class="text-xs text-zinc-300 mt-1 hidden"><i class="fa-solid fa-volume-high text-brand-gold mr-1"></i><span id="selected-movie-audio"></span></p>
                     </div>
                 </div>
 
@@ -1193,6 +1195,7 @@ function posterFallback(img) {
                                     <h4 id="summary-movie-title" class="text-lg font-bold text-white leading-snug">Movie Title</h4>
                                     <p class="text-xs text-brand-gold mt-1" id="summary-movie-genre">Genre</p>
                                     <p class="text-xs text-brand-lightGray mt-2"><i class="fa-regular fa-clock mr-1"></i> <span id="summary-movie-duration">120 นาที</span></p>
+                                    <p id="summary-movie-audio-row" class="text-xs text-zinc-300 mt-1 hidden"><i class="fa-solid fa-volume-high text-brand-gold mr-1"></i><span id="summary-movie-audio"></span></p>
                                 </div>
                             </div>
 
@@ -1232,7 +1235,7 @@ function posterFallback(img) {
                             <div class="bg-brand-card p-3 rounded-lg border border-zinc-800 text-[11px] text-brand-lightGray space-y-1">
                                 <p class="text-brand-gold font-semibold"><i class="fa-solid fa-circle-info mr-1"></i> ข้อกำหนดสำคัญ:</p>
                                 <p>• หลังจากกด ยืนยันการจอง แล้ว ระบบจะส่งข้อมูลให้แอดมินตรวจสอบ</p>
-                                <p>• ทางแอดมินจะตรวจสอบการโอนเงิน และจัดส่ง QR Code เข้าชมให้ท่านผ่านทางอีเมลอีกครั้ง</p>
+                                <p>• ทางแอดมินจะตรวจสอบการโอนเงิน และจัดส่ง QR Code เข้างานให้ท่านผ่านทางอีเมลอีกครั้ง</p>
                             </div>
                         </div>
                     </div>
@@ -1622,7 +1625,7 @@ function posterFallback(img) {
         let SEAT_CAPACITY = SEAT_ROWS.length * SEATS_PER_ROW;
         let SHOW_CLOSE_AFTER_START_MINUTES = 15;
         let homeDate = 'all';          // วันที่เลือกในหน้าแรก ('all' = ทุกเรื่อง พร้อมรอบถัดไป)
-        const HOME_DAYS = 7;           // ปุ่มวันในหน้าแรก: วันนี้ + 6 วันถัดไป (วันอื่นเลือกจากปฏิทิน)
+        const HOME_DAYS = 7;           // ปุ่มวันในหน้าแรก: 7 วันถัดไปที่มีรอบฉาย (วันอื่นเลือกจากปฏิทิน)
         const SCHEDULE_CACHE_KEY = 'mt_schedule|' + GOOGLE_SCRIPT_URL;
         const THAI_DAY_SHORT = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
         const THAI_MONTH_SHORT = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
@@ -1764,9 +1767,17 @@ function posterFallback(img) {
             const note = document.getElementById('home-date-note');
             if (!bar) return;
             const today = localDateString(new Date());
-            const days = Array.from({ length: HOME_DAYS }, (_, i) => addDays(today, i));
+            // แสดงเฉพาะวันที่มีรอบที่ยังจองได้ 7 วันแรก ข้ามวันที่ไม่มีรอบ (ผู้ใช้เลือก 3 พ.ย. 2569)
+            // เดิมแสดงวันนี้ + 6 วันต่อเนื่อง ช่วงก่อนเปิดโรงลูกค้าเห็น "ไม่มีรอบ" ทุกวัน คิดว่าโรงไม่เปิด
+            // ใช้กฎเดียวกับขั้นเลือกรอบ (#date-chips) ที่แสดงเฉพาะวันที่มีรอบอยู่แล้ว
+            const ids = new Set(MOVIES_DATA.map(m => m.id));
+            const openDates = Array.from(new Set(SCHEDULE.filter(s => ids.has(s.movieId) && isSlotOpen(s.date, s.time)).map(s => s.date))).sort();
+            const days = openDates.slice(0, HOME_DAYS);
             // วันที่เลือกจากปฏิทินที่ไม่อยู่ใน 7 วันแรก แสดงเป็นปุ่มต่อจาก "ทุกเรื่อง"
             if (homeDate !== 'all' && !days.includes(homeDate)) days.unshift(homeDate);
+            // ยังไม่มีรอบเลยสักวัน: ซ่อนแถบวัน แล้วบอกในข้อความใต้แถบแทน (รอโหลดครั้งแรกเสร็จก่อน จะได้ไม่ขึ้นแวบเดียว)
+            const noShows = !openDates.length && homeDate === 'all';
+            bar.classList.toggle('hidden', noShows && (scheduleLoaded || !!scheduleError));
             const moviesOn = date => new Set(openShows_any(date).map(s => s.movieId)).size;
             const chip = (active, html, onclick, dim) => `
                 <button type="button" onclick="${onclick}" class="flex-shrink-0 min-w-[64px] px-3 py-2 rounded-xl border text-center leading-tight transition ${active
@@ -1800,7 +1811,8 @@ function posterFallback(img) {
                 if (scheduleError && !SCHEDULE.length) {
                     note.innerHTML = `${escapeHtml(scheduleError)} <button type="button" onclick="loadSchedule()" class="underline text-brand-gold ml-1">ลองอีกครั้ง</button>`;
                 } else if (homeDate === 'all') {
-                    note.textContent = SCHEDULE.length ? 'กดเวลาใต้โปสเตอร์เพื่อจองรอบนั้นได้ทันที' : '';
+                    note.textContent = openDates.length ? 'กดเวลาใต้โปสเตอร์เพื่อจองรอบนั้นได้ทันที'
+                        : scheduleLoaded ? 'ยังไม่มีรอบฉาย กรุณาติดตามเร็วๆ นี้' : '';
                 } else {
                     const n = moviesOn(homeDate);
                     note.textContent = thaiDateText(homeDate) + (n ? ' · ฉาย ' + n + ' เรื่อง' : ' · ยังไม่มีรอบฉาย');
@@ -1892,6 +1904,7 @@ function posterFallback(img) {
                         <div>
                             <span class="text-[10px] text-brand-gold font-medium uppercase tracking-wider block">${escapeHtml(movie.genre)}</span>
                             <h3 class="text-base font-bold text-white mt-1 group-hover:text-brand-gold transition line-clamp-1">${escapeHtml(movie.title)}</h3>
+                            ${movie.audio ? `<p class="text-[11px] text-zinc-300 mt-1"><i class="fa-solid fa-volume-high text-brand-gold mr-1"></i>${escapeHtml(movie.audio)}</p>` : ''}
                             ${movie.description ? `<p class="text-xs text-zinc-400 mt-1.5 leading-relaxed line-clamp-3">${escapeHtml(movie.description)}</p>` : ''}
                             <div class="mt-3">${showsHtml}</div>
                         </div>
@@ -1925,6 +1938,10 @@ function posterFallback(img) {
             document.getElementById('summary-movie-title').innerText = selectedMovie.title;
             document.getElementById('summary-movie-genre').innerText = selectedMovie.genre;
             document.getElementById('summary-movie-duration').innerText = selectedMovie.duration;
+            ['selected', 'summary'].forEach(prefix => {
+                document.getElementById(prefix + '-movie-audio').innerText = selectedMovie.audio || '';
+                document.getElementById(prefix + '-movie-audio-row').classList.toggle('hidden', !selectedMovie.audio);
+            });
 
             goToStep(2);
             updateShowtimesAndSeats();
