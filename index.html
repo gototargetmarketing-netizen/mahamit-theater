@@ -2210,11 +2210,16 @@ function posterFallback(img) {
             if (!rule || seatCount === 0 || (rule.minSeats && seatCount < rule.minSeats)) return 0;
             return rule.type === 'percent'
                 ? Math.floor(subtotal * rule.value / 100)
-                : Math.min(Math.floor(rule.value), subtotal);
+                : rule.type === 'perseat'
+                    ? Math.min(Math.floor(rule.value) * seatCount, subtotal)
+                    : Math.min(Math.floor(rule.value), subtotal);
         }
 
+        // perseat บอก "ที่นั่งละ" ให้ชัด ลูกค้าจะได้ไม่เข้าใจว่าลดครั้งเดียวทั้งการจอง
         function discountLabel(rule) {
-            return rule.type === 'percent' ? `ลด ${rule.value}%` : `ลด ${Number(rule.value).toLocaleString()} บาท`;
+            if (rule.type === 'percent') return `ลด ${rule.value}%`;
+            if (rule.type === 'perseat') return `ลดที่นั่งละ ${Number(rule.value).toLocaleString()} บาท`;
+            return `ลด ${Number(rule.value).toLocaleString()} บาท`;
         }
 
         function showDiscountMessage(type, text) {
