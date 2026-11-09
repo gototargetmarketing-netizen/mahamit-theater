@@ -346,6 +346,26 @@
         }
         .print-only { display: none; }
 
+        /* ช่องวันที่/เวลาโอน: Safari บน iPhone วาดเป็นปุ่มแบบของระบบที่มีความกว้างขั้นต่ำของตัวเอง
+           ช่องจึงล้นขอบขวา และจัดตัวหนังสือไว้กลาง ไม่ตรงกับช่องอื่น (ผู้ใช้เจอ 3 พ.ย. 2569)
+           → ปิดหน้าตาแบบระบบ ให้กว้างตามกรอบ ชิดซ้าย และสูงเท่าช่องกรอกอื่น (ตัวเลือกวัน/เวลาของเครื่องยังเปิดได้เหมือนเดิม) */
+        #pay-date, #pay-time {
+            -webkit-appearance: none;
+            appearance: none;
+            display: block;
+            min-width: 0;
+            max-width: 100%;
+            /* สูงเท่าช่องข้อความ p-3: บรรทัด 1.5em + ขอบใน 2×0.75rem + เส้นกรอบ (ตั้งตายตัว เพราะช่องวันที่ของระบบสูงกว่าเอง) */
+            height: calc(1.5em + 1.5rem + 2px);
+            line-height: 1.5;
+            text-align: left;
+        }
+        #pay-date::-webkit-date-and-time-value,
+        #pay-time::-webkit-date-and-time-value {
+            text-align: left;
+            margin: 0;
+        }
+
         /* พิมพ์ใบจอง / บันทึกเป็น PDF: เหลือแค่การ์ดใบจองบนกระดาษขาว 1 หน้า
            ถ้าไม่มีส่วนนี้ จะติดหัวเว็บ ปุ่ม และพื้นหลังสีเข้มมาด้วย (บทเรียนจากคอนเสิร์ต)
            เปลี่ยนเป็นตัวหนังสือสีเข้มบนพื้นขาว เพราะเบราว์เซอร์ส่วนใหญ่ไม่พิมพ์สีพื้นหลัง
@@ -1135,11 +1155,12 @@ function posterFallback(img) {
 
                             <!-- Payment Date & Time Auto Inputs -->
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                                <div>
+                                <!-- min-w-0: ไม่ให้ช่องวันที่/เวลาของ iPhone ดันคอลัมน์ให้กว้างเกินกรอบ -->
+                                <div class="min-w-0">
                                     <label class="block text-base font-medium text-brand-lightGray mb-1">วันที่โอนเงิน (ตามสลิป) <span class="text-brand-red">*</span></label>
                                     <input type="date" id="pay-date" required class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
                                 </div>
-                                <div>
+                                <div class="min-w-0">
                                     <label class="block text-base font-medium text-brand-lightGray mb-1">เวลาที่โอนเงิน (ตามสลิป) <span class="text-brand-red">*</span></label>
                                     <input type="time" id="pay-time" required class="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white focus:outline-none focus:border-brand-red transition">
                                 </div>
@@ -1494,8 +1515,8 @@ function posterFallback(img) {
         let MOVIES_DATA = [];
 
         // Seat Layout Specification: 25 seats total
-        // Rows: A, B, C, E, F (5 seats per row)
-        const SEAT_ROWS = ['A', 'B', 'C', 'E', 'F'];
+        // Rows: A–E ไม่ข้าม D (5 seats per row) ต้องตรงกับ Code.gs — ผู้ใช้เปลี่ยน 3 พ.ย. 2569 (เดิม A B C E F)
+        const SEAT_ROWS = ['A', 'B', 'C', 'D', 'E'];
         const SEATS_PER_ROW = 5;
         const TICKET_PRICE = 100; // 100 THB per seat
         // ต้องตรงกับ MAX_SEATS_PER_BOOKING ใน Code.gs (โรงมีแค่ 25 ที่ กันคนเดียวกวาดทั้งโรง)
@@ -2157,7 +2178,8 @@ function posterFallback(img) {
                 return;
             }
 
-            layout.innerHTML = SEAT_ROWS.map(row => {
+            // จออยู่บนสุดของผัง จึงวาดกลับด้าน ให้แถว E ติดจอ และ A อยู่หลังสุดเหมือนในโรงจริง
+            layout.innerHTML = SEAT_ROWS.slice().reverse().map(row => {
                 let rowSeatsHTML = '';
                 for (let i = 1; i <= SEATS_PER_ROW; i++) {
                     const seatId = `${row}${i}`;
