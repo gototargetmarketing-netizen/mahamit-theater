@@ -2617,7 +2617,7 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
             // ---------- หัว: MAHAMIT THEATER (อังกฤษ เว้นระยะตัวอักษรได้) ----------
             const titleFont = font(700, 30);
             ctx.font = titleFont;
-            const part1 = 'MAHAMIT ', part2 = 'THEATER';
+            const part1 = 'MAHAMIT ', part2 = 'THEATRE';
             const w1 = spacedTextWidth(ctx, part1, 5), w2 = spacedTextWidth(ctx, part2, 5);
             const titleX = (W - (w1 + w2)) / 2;
             ops.push({ t: 'text', text: part1, x: titleX, y, lh: 45, font: titleFont, color: C.white, align: 'left', spacing: 5 });
