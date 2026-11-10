@@ -297,7 +297,7 @@
 }
 
 
-/* MAHAMIT THEATER - Loading Modal Color Override */
+/* MAHAMIT THEATRE - Loading Modal Color Override */
 #bookingLoadingModal .booking-loading-card {
   background: #171719 !important;
   border: 2px solid #D4AF37 !important;
@@ -436,7 +436,7 @@
 
 
 
-<!-- MAHAMIT THEATER - MOVIE POSTER INTRO -->
+<!-- MAHAMIT THEATRE - MOVIE POSTER INTRO -->
 <style>
   #movieIntro {
     position: fixed;
@@ -498,20 +498,39 @@
 
 
     
+  /* ปุ่มปิด: เดิมเป็นวงกลม × เล็กบนพื้นดำ ลูกค้าไม่รู้ว่าต้องกดตรงนี้เพื่อเข้าหน้าจอง
+     → แคปซูลสีทองมีคำว่า "ปิดหน้าต่าง" (ผู้ใช้ขอ 10 พ.ย. 2569) อยู่แถวบนสุดของตัวเอง
+     ไม่ลอยทับมุม เพราะปุ่มที่มีคำกว้างขึ้นจนจะทับโลโก้บนมือถือ (ปกด้านล่างย่อลงเอง) */
   #movieIntro .intro-close {
-    position: absolute;
-    right: 0;
-    top: 0;
+    position: relative;
     z-index: 2;
-    width: 44px;
-    height: 44px;
-    border: 1px solid #d7ad45;
-    border-radius: 50%;
-    background: rgba(20,20,22,.92);
-    color: #fff;
-    font-size: 28px;
+    align-self: flex-end;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 20px 0 16px;
+    border: 2px solid #f3d27a;
+    border-radius: 999px;
+    background: #d7ad45;
+    color: #111;
+    font-size: 16px;
+    font-weight: 800;
     line-height: 1;
     cursor: pointer;
+    box-shadow: 0 0 0 4px rgba(215,173,69,.18), 0 6px 18px rgba(0,0,0,.45);
+    transition: background .2s ease, transform .2s ease;
+  }
+  #movieIntro .intro-close:hover,
+  #movieIntro .intro-close:focus-visible {
+    background: #f0c75a;
+    transform: scale(1.04);
+    outline: none;
+  }
+  #movieIntro .intro-close-x {
+    font-size: 20px;
+    font-weight: 900;
   }
 
   #movieIntro .intro-heading {
@@ -621,10 +640,9 @@
 }
 
     #movieIntro .intro-close {
-      right: 2px;
-      top: 2px;
-      width: 40px;
-      height: 40px;
+      min-height: 42px;
+      padding: 0 16px 0 12px;
+      font-size: 15px;
     }
 
     #movieIntro .intro-heading {
@@ -641,7 +659,7 @@
 
 
 
-/* MAHAMIT THEATER - SUCCESS SCREEN REFINEMENT */
+/* MAHAMIT THEATRE - SUCCESS SCREEN REFINEMENT */
 #step-4 .success-check-circle {
     width: 82px !important;
     height: 82px !important;
@@ -704,6 +722,13 @@
 
 
     
+  /* มือถือจอเตี้ย: แถวปุ่มปิดกินที่ปก → ย่อรูปเรื่องเล็ก ช่องไฟ และระยะหัวข้อแทน ให้ปกยังใหญ่พอดู */
+  @media (max-width: 600px) and (max-height: 760px) {
+    #movieIntro .intro-panel { gap: 6px; }
+    #movieIntro .intro-heading { padding-top: 0; }
+    #movieIntro .intro-thumbnails { gap: 8px; padding: 0; }
+    #movieIntro .intro-thumb { width: 40px; height: 54px; }
+  }
 </style>
 
 <div id="movieIntro" role="dialog"
@@ -713,15 +738,14 @@
   <div class="intro-panel">
 
     <button class="intro-close" id="introClose"
-            type="button"
-            aria-label="ปิดหน้าสไลด์">×</button>
+            type="button"><span class="intro-close-x" aria-hidden="true">✕</span>ปิดหน้าต่าง</button>
 
 
 <div class="intro-logo-wrap">
   <img
     class="intro-logo"
     src="./logo.png"
-    alt="MAHAMIT Theater Logo"
+    alt="MAHAMIT Theatre Logo"
   >
 </div>
 
@@ -907,7 +931,7 @@ function posterFallback(img) {
         </h1>
 
         <p class="text-[8px] sm:text-xs md:text-sm text-brand-lightGray tracking-normal sm:tracking-widest leading-snug mt-1">
-          CLASSIC &amp; MODERN CINEMA EXPERIENCE
+          A VINTAGE CINEMA EXPERIENCE
         </p>
       </div>
     </div>
@@ -946,7 +970,8 @@ function posterFallback(img) {
             <div class="text-center max-w-2xl mx-auto mb-8">
                 <h2 class="text-2xl sm:text-3xl font-bold text-white font-classic tracking-wide">NOW SHOWING</h2>
                 <div class="h-1 w-24 bg-brand-red mx-auto my-2 rounded-full"></div>
-                <p class="text-brand-lightGray text-sm">เลือกชมภาพยนตร์สุดคลาสสิกและไฮไลต์ประจำสัปดาห์ ณ โรงภาพยนตร์เกรียงไกรมาหามิตร</p>
+                <!-- ข้อความต้อนรับ 2 บรรทัดตามที่ผู้ใช้ให้มา (10 พ.ย. 2569) -->
+                <p class="text-brand-lightGray text-sm leading-relaxed">เจอกันหน้าโรงนะ<br>ชวนมิตรมาดูหนังด้วยกันที่โรงหนังจิ๋วในแม่ริม</p>
             </div>
 
             <!-- เลือกวันดูว่าวันนั้นฉายเรื่องอะไร (31 ต.ค. 2569) ค่าเริ่มต้น "ทุกเรื่อง" = แสดงทุกเรื่องพร้อมรอบถัดไป -->
@@ -956,7 +981,8 @@ function posterFallback(img) {
             </div>
 
             <!-- Movie Grid (5 Movies) -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6" id="movie-grid">
+            <!-- มือถือแถวละ 2 เรื่อง เห็นโปสเตอร์หลายเรื่องในจอเดียว (ผู้ใช้ขอ 10 พ.ย. 2569) จอใหญ่เหมือนเดิม -->
+            <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-6" id="movie-grid">
                 <!-- Dynamically Inserted Movies via JS -->
             </div>
         </section>
@@ -1035,7 +1061,7 @@ function posterFallback(img) {
     <!-- ว่าง -->
     <div class="flex items-center space-x-2">
         <div class="w-5 h-5 rounded bg-green-800 border-2 border-green-400"></div>
-        <span>ว่าง (100 บาท)</span>
+        <span>ว่าง (107 บาท)</span>
     </div>
 
     <!-- ที่เลือก -->
@@ -1266,7 +1292,7 @@ function posterFallback(img) {
         </section>
 
 
-<!-- MAHAMIT THEATER - PREMIUM BOOKING SUCCESS -->
+<!-- MAHAMIT THEATRE - PREMIUM BOOKING SUCCESS -->
 <section id="step-4" class="hidden max-w-5xl mx-auto">
 
     <div class="relative overflow-hidden rounded-3xl border-2 border-[#D4AF37] shadow-2xl"
@@ -1303,7 +1329,7 @@ function posterFallback(img) {
                     MAHAMIT <span class="text-[#D4AF37]">THEATRE</span>
                 </p>
                 <p class="text-zinc-400 text-[10px] sm:text-xs tracking-[0.2em] mt-2">
-                    CLASSIC &amp; MODERN CINEMA EXPERIENCE
+                    A VINTAGE CINEMA EXPERIENCE
                 </p>
             </div>
 
@@ -1473,7 +1499,7 @@ function posterFallback(img) {
 
             <!-- BRAND FOOTNOTE -->
             <p class="text-center text-zinc-500 text-[10px] sm:text-xs mt-7 tracking-wider print-hide">
-                MAHAMIT THEATRE · CLASSIC &amp; MODERN CINEMA EXPERIENCE
+                MAHAMIT THEATRE · A VINTAGE CINEMA EXPERIENCE
             </p>
 
         </div>
@@ -1518,7 +1544,7 @@ function posterFallback(img) {
         // Rows: A–E ไม่ข้าม D (5 seats per row) ต้องตรงกับ Code.gs — ผู้ใช้เปลี่ยน 3 พ.ย. 2569 (เดิม A B C E F)
         const SEAT_ROWS = ['A', 'B', 'C', 'D', 'E'];
         const SEATS_PER_ROW = 5;
-        const TICKET_PRICE = 100; // 100 THB per seat
+        const TICKET_PRICE = 107; // ราคาต่อที่นั่ง ต้องตรงกับ Code.gs (ผู้ใช้เปลี่ยน 10 พ.ย. 2569 เดิม 100)
         // ต้องตรงกับ MAX_SEATS_PER_BOOKING ใน Code.gs (โรงมีแค่ 25 ที่ กันคนเดียวกวาดทั้งโรง)
         const MAX_SEATS_PER_BOOKING = 6;
 
@@ -1812,16 +1838,19 @@ function posterFallback(img) {
             // คอมกดที่ตัวช่องแล้วปฏิทินไม่เด้งเอง (ต้องกดที่ไอคอน) จึงเรียก showPicker() ช่วย
             // เลือกวันแล้ววันนั้นจะขึ้นเป็นปุ่มในแถบ (ต่อจาก "ทุกเรื่อง") และถูกเลือกอยู่
             const otherDayChip = `<label class="relative flex-shrink-0 flex flex-col justify-center min-w-[84px] px-3 py-2 rounded-xl border bg-zinc-900 text-zinc-300 border-zinc-700 hover:border-zinc-500 text-center leading-tight cursor-pointer transition">
+                    <!-- 3 ชั้นแบบปุ่มวันที่: ไอคอน / ไทยตัวหนา / อังกฤษตัวเล็กสีเทา (ผู้ใช้เลือก 10 พ.ย. 2569) -->
                     <span class="block text-base text-brand-gold"><i class="fa-regular fa-calendar-days"></i></span>
-                    <span class="block text-sm font-bold mt-0.5">เลือกวันอื่น</span>
-                    <input type="date" id="home-date-input" aria-label="เลือกวันอื่นจากปฏิทิน" min="${today}" max="${addDays(today, SCHEDULE_DAYS_AHEAD)}" value="${homeDate === 'all' ? '' : homeDate}"
+                    <span class="block text-sm font-bold mt-0.5">เลือกวันฉาย</span>
+                    <span class="block text-[10px] text-zinc-500">Select a Date</span>
+                    <input type="date" id="home-date-input" aria-label="เลือกวันฉายจากปฏิทิน" min="${today}" max="${addDays(today, SCHEDULE_DAYS_AHEAD)}" value="${homeDate === 'all' ? '' : homeDate}"
                         onchange="if (this.value) setHomeDate(this.value)"
                         onclick="try { this.showPicker(); } catch (e) {}"
                         class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
                 </label>`;
             bar.innerHTML = otherDayChip
                 + chip(homeDate === 'all',
-                    '<span class="block text-[11px]">ดูทั้งหมด</span><span class="block text-sm font-bold">ทุกเรื่อง</span>', "setHomeDate('all')", false)
+                    '<span class="block text-base text-brand-gold"><i class="fa-solid fa-film"></i></span><span class="block text-sm font-bold mt-0.5">ดูทุกเรื่อง</span>'
+                    + `<span class="block text-[10px] ${homeDate === 'all' ? 'text-white/80' : 'text-zinc-500'}">View All Films</span>`, "setHomeDate('all')", false)
                 + days.map(d => {
                     const n = moviesOn(d);
                     return chip(homeDate === d,
@@ -1833,7 +1862,8 @@ function posterFallback(img) {
                 if (scheduleError && !SCHEDULE.length) {
                     note.innerHTML = `${escapeHtml(scheduleError)} <button type="button" onclick="loadSchedule()" class="underline text-brand-gold ml-1">ลองอีกครั้ง</button>`;
                 } else if (homeDate === 'all') {
-                    note.textContent = openDates.length ? 'กดเวลาใต้โปสเตอร์เพื่อจองรอบนั้นได้ทันที'
+                    // ข้อความไทย + อังกฤษ 2 บรรทัด (ผู้ใช้ให้มา 10 พ.ย. 2569) เป็นข้อความคงที่ ไม่มีข้อมูลจากชีต จึงใช้ innerHTML ได้
+                    note.innerHTML = openDates.length ? 'แตะเวลาฉายใต้โปสเตอร์เพื่อจองตั๋ว<br>Tap a showtime below the poster to book your tickets.'
                         : scheduleLoaded ? 'ยังไม่มีรอบฉาย กรุณาติดตามเร็วๆ นี้' : '';
                 } else {
                     const n = moviesOn(homeDate);
@@ -1911,32 +1941,36 @@ function posterFallback(img) {
                     // เลือกวัน = รอบของวันนั้น / ทุกเรื่อง = รอบของวันที่ฉายถัดไปที่ยังมีที่นั่ง
                     showDate = homeDate !== 'all' ? homeDate : (c.next || c.first).date;
                     const shows = homeDate !== 'all' ? c.dayShows : openShows(movie.id, showDate);
-                    const label = homeDate !== 'all' ? 'รอบฉาย' : 'รอบถัดไป · ' + dayLabel(showDate) + ' ' + dayMonth(showDate);
-                    showsHtml = `<p class="text-[11px] text-zinc-400 mb-1.5"><i class="fa-regular fa-clock mr-1 text-brand-gold"></i>${escapeHtml(label)}</p>
+                    // มือถือการ์ดแคบ: ซ่อนคำว่า "รอบถัดไป ·" เหลือแค่วัน
+                    const label = homeDate !== 'all' ? 'รอบฉาย'
+                        : '<span class="hidden sm:inline">รอบถัดไป · </span>' + escapeHtml(dayLabel(showDate) + ' ' + dayMonth(showDate));
+                    showsHtml = `<p class="text-[11px] text-zinc-400 mb-1.5"><i class="fa-regular fa-clock mr-1 text-brand-gold"></i>${label}</p>
                         <div class="flex flex-wrap gap-1.5">${homeTimeChips(movie.id, shows)}</div>`;
                     if (homeDate === 'all' && !c.next) button = { label: 'เต็มทุกรอบ', disabled: true };
                 }
+                // กดโปสเตอร์ = ไปเลือกวันและรอบ (มือถือไม่มีปุ่มใหญ่ใต้การ์ดแล้ว) / เรื่องที่เร็วๆ นี้หรือเต็มทุกรอบกดไม่ได้
+                const pick = button.disabled ? '' : `selectMovie('${movie.id}'${showDate ? `,'${showDate}'` : ''})`;
                 return `
                 <div class="bg-brand-card rounded-xl border border-zinc-800 overflow-hidden hover:border-brand-red transition duration-300 flex flex-col justify-between group shadow-lg">
-                    <div class="relative overflow-hidden aspect-[2/3]">
+                    <div class="relative overflow-hidden aspect-[2/3] ${pick ? 'cursor-pointer' : ''}" ${pick ? `onclick="${pick}"` : ''}>
                         <img src="${escapeHtml(movie.poster)}" alt="${escapeHtml(movie.title)}" loading="lazy" referrerpolicy="no-referrer" onerror="posterFallback(this)" class="w-full h-full object-cover group-hover:scale-105 transition duration-500 ${comingSoon ? 'opacity-60' : ''}">
                         <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
-                        ${movie.duration ? `<span class="absolute top-3 right-3 bg-brand-red text-white text-[10px] font-bold px-2 py-1 rounded shadow border border-brand-gold/40">
+                        ${movie.duration ? `<span class="absolute top-2 right-2 sm:top-3 sm:right-3 bg-brand-red text-white text-[10px] font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded shadow border border-brand-gold/40">
                             ${escapeHtml(movie.duration)}
                         </span>` : ''}
-                        ${comingSoon ? `<span class="absolute top-3 left-3 bg-black/80 text-brand-gold text-[11px] font-bold px-2.5 py-1 rounded border border-brand-gold/60">เร็วๆ นี้</span>` : ''}
+                        ${comingSoon ? `<span class="absolute top-2 left-2 sm:top-3 sm:left-3 bg-black/80 text-brand-gold text-[10px] sm:text-[11px] font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded border border-brand-gold/60">เร็วๆ นี้</span>` : ''}
                     </div>
-                    <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+                    <div class="p-2.5 sm:p-4 flex-1 flex flex-col justify-between space-y-3">
                         <div>
-                            <span class="text-[10px] text-brand-gold font-medium uppercase tracking-wider block">${escapeHtml(movie.genre)}</span>
-                            <h3 class="text-base font-bold text-white mt-1 group-hover:text-brand-gold transition line-clamp-1">${escapeHtml(movie.title)}</h3>
+                            <span class="text-[10px] text-brand-gold font-medium uppercase tracking-wider block truncate">${escapeHtml(movie.genre)}</span>
+                            <h3 class="text-sm sm:text-base leading-snug font-bold text-white mt-1 group-hover:text-brand-gold transition line-clamp-2 sm:line-clamp-1">${escapeHtml(movie.title)}</h3>
                             ${movie.audio ? `<p class="text-[11px] text-zinc-300 mt-1"><i class="fa-solid fa-volume-high text-brand-gold mr-1"></i>${escapeHtml(movie.audio)}</p>` : ''}
-                            ${movie.description ? `<p class="text-xs text-zinc-400 mt-1.5 leading-relaxed line-clamp-3">${escapeHtml(movie.description)}</p>` : ''}
-                            <div class="mt-3">${showsHtml}</div>
+                            ${movie.description ? `<div class="hidden sm:block"><p class="text-xs text-zinc-400 mt-1.5 leading-relaxed line-clamp-3">${escapeHtml(movie.description)}</p></div>` : ''}
+                            <div class="mt-2 sm:mt-3">${showsHtml}</div>
                         </div>
                         ${button.disabled
-                            ? `<button type="button" disabled class="w-full bg-zinc-900 text-zinc-500 font-semibold py-2.5 px-4 rounded-lg text-xs border border-zinc-800 cursor-not-allowed">${button.label}</button>`
-                            : `<button onclick="selectMovie('${movie.id}'${showDate ? `,'${showDate}'` : ''})" class="w-full bg-zinc-800 hover:bg-brand-red text-[#D4AF37] font-semibold py-2.5 px-4 rounded-lg text-xs transition border border-zinc-700 hover:border-brand-gold flex items-center justify-center space-x-1">
+                            ? `<button type="button" disabled class="hidden sm:block w-full bg-zinc-900 text-zinc-500 font-semibold py-2.5 px-4 rounded-lg text-xs border border-zinc-800 cursor-not-allowed">${button.label}</button>`
+                            : `<button onclick="${pick}" class="hidden sm:flex w-full bg-zinc-800 hover:bg-brand-red text-[#D4AF37] font-semibold py-2.5 px-4 rounded-lg text-xs transition border border-zinc-700 hover:border-brand-gold items-center justify-center space-x-1">
                             <i class="fa-solid fa-ticket"></i>
                             <span>${button.label}</span>
                         </button>`}
@@ -2614,7 +2648,7 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
             const contentW = W - PAD_X * 2;  // 466
             let y = 3 + 5 + 30;              // ขอบทอง + แถบทองบนสุด 5 + ระยะขอบบน 30
 
-            // ---------- หัว: MAHAMIT THEATER (อังกฤษ เว้นระยะตัวอักษรได้) ----------
+            // ---------- หัว: MAHAMIT THEATRE (อังกฤษ เว้นระยะตัวอักษรได้) ----------
             const titleFont = font(700, 30);
             ctx.font = titleFont;
             const part1 = 'MAHAMIT ', part2 = 'THEATRE';
@@ -2623,7 +2657,7 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
             ops.push({ t: 'text', text: part1, x: titleX, y, lh: 45, font: titleFont, color: C.white, align: 'left', spacing: 5 });
             ops.push({ t: 'text', text: part2, x: titleX + w1, y, lh: 45, font: titleFont, color: C.gold, align: 'left', spacing: 5 });
             y += 45 + 6;
-            const subFont = font(400, 11), subText = 'CLASSIC & MODERN CINEMA EXPERIENCE';
+            const subFont = font(400, 11), subText = 'A VINTAGE CINEMA EXPERIENCE';
             ctx.font = subFont;
             ops.push({ t: 'text', text: subText, x: (W - spacedTextWidth(ctx, subText, 4)) / 2, y, lh: 17, font: subFont, color: C.gray, align: 'left', spacing: 4 });
             y += 17 + 18;
@@ -3481,7 +3515,7 @@ function openQRModal() {
 // ใช้ไฟล์ QR ตัวจริง (ไม่ใช่แคปหน้าจอ) รูปจึงคมชัดและสแกนได้แน่นอน
 // แยกตามเครื่องด้วย deliverImage แบบเดียวกับปุ่มบันทึกใบจอง
 // ==========================================
-const QR_IMAGE_FILE_NAME = 'QR-ชำระเงิน-MAHAMIT-THEATER.png';
+const QR_IMAGE_FILE_NAME = 'QR-ชำระเงิน-MAHAMIT-THEATRE.png';
 let qrImageBlob = null;
 let qrImagePromise = null;
 
