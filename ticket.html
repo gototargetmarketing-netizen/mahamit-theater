@@ -131,8 +131,23 @@
                 movie: (params.get('m') || '').trim(),
                 date: (params.get('d') || '').trim(),
                 time: (params.get('t') || '').trim(),
+                lang: params.get('l') === 'en' ? 'en' : 'th',
                 seats: seats
             };
+        }
+
+        // ภาษาของบัตร (ตามที่ลูกค้าเลือกตอนจอง ส่งมากับลิงก์ l=en — Code.gs ticketLink_)
+        let lang = 'th';
+        const tr = (th, en) => lang === 'en' ? en : th;
+
+        // 2026-10-25 → Sun, 25 Oct 2026 (เหมือน formatEnDate_ ใน Code.gs)
+        function formatEnDate(value) {
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+            if (!m) return value;
+            const date = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return days[date.getDay()] + ', ' + Number(m[3]) + ' ' + months[Number(m[2]) - 1] + ' ' + m[1];
         }
 
         // 2026-10-25 → วันอาทิตย์ที่ 25 ต.ค. 2569 (เหมือน formatThaiDate_ ใน Code.gs)
@@ -160,7 +175,7 @@
                 '&m=' + encodeURIComponent(data.movie) +
                 '&d=' + encodeURIComponent(data.date) +
                 '&t=' + encodeURIComponent(data.time) +
-                '&s=' + ticket.seat + '.' + ticket.token;
+                '&s=' + ticket.seat + '.' + ticket.token + (data.lang === 'en' ? '&l=en' : '');
         }
 
         function showToast(message) {
@@ -174,49 +189,59 @@
         async function shareSeat(index) {
             const ticket = ticketData.seats[index];
             const url = seatLink(ticketData, ticket);
-            const text = `บัตรเข้าชม ${ticketData.movie} ที่นั่ง ${ticket.seat} | MAHAMIT THEATRE`;
+            const text = tr(`บัตรเข้าชม ${ticketData.movie} ที่นั่ง ${ticket.seat}`, `Ticket: ${ticketData.movie} seat ${ticket.seat}`) + ' | MAHAMIT THEATRE';
             try {
                 if (navigator.share) {
                     await navigator.share({ title: text, text: text, url: url });
                     return;
                 }
                 await navigator.clipboard.writeText(url);
-                showToast('คัดลอกลิงก์แล้ว ส่งให้เพื่อนได้เลย');
+                showToast(tr('คัดลอกลิงก์แล้ว ส่งให้เพื่อนได้เลย', 'Link copied. You can send it to your friend.'));
             } catch (err) {
                 // ผู้ใช้กดยกเลิกการแชร์ ไม่ต้องแจ้งอะไร
                 if (err && err.name === 'AbortError') return;
-                prompt('คัดลอกลิงก์นี้ส่งให้เพื่อน', url);
+                prompt(tr('คัดลอกลิงก์นี้ส่งให้เพื่อน', 'Copy this link and send it to your friend'), url);
             }
         }
 
         function render(data) {
             const app = document.getElementById('app');
+            lang = data.lang;
+            document.documentElement.lang = lang;
+            document.title = tr('บัตรเข้าชม', 'Ticket') + ' | MAHAMIT THEATRE';
             if (!data.bookingId || !data.seats.length) {
-                app.innerHTML = `<div class="error"><b>ไม่พบข้อมูลบัตรเข้าชม</b><br>
-                    กรุณาเปิดลิงก์จากอีเมลยืนยันการจองอีกครั้ง หรือติดต่อโรงภาพยนตร์พร้อมเลขจอง</div>`;
+                app.innerHTML = tr(`<div class="error"><b>ไม่พบข้อมูลบัตรเข้าชม</b><br>
+                    กรุณาเปิดลิงก์จากอีเมลยืนยันการจองอีกครั้ง หรือติดต่อโรงภาพยนตร์พร้อมเลขจอง</div>`,
+                    `<div class="error"><b>Ticket not found</b><br>
+                    Please open the link in your confirmation email again, or contact the theatre with your booking number.</div>`);
                 return;
             }
             if (typeof qrcode !== 'function') {
-                app.innerHTML = `<div class="error"><b>โหลดตัวสร้าง QR ไม่สำเร็จ</b><br>
-                    กรุณาตรวจสอบอินเทอร์เน็ตแล้วรีเฟรชหน้านี้ หรือใช้ QR ในอีเมลแทน</div>`;
+                app.innerHTML = tr(`<div class="error"><b>โหลดตัวสร้าง QR ไม่สำเร็จ</b><br>
+                    กรุณาตรวจสอบอินเทอร์เน็ตแล้วรีเฟรชหน้านี้ หรือใช้ QR ในอีเมลแทน</div>`,
+                    `<div class="error"><b>Could not load the QR generator</b><br>
+                    Please check your internet connection and refresh this page, or use the QR codes in your email.</div>`);
                 return;
             }
+            const when = data.date ? tr(esc(formatThaiDate(data.date)) + (data.time ? ` · รอบ ${esc(data.time)} น.` : ''),
+                esc(formatEnDate(data.date)) + (data.time ? ` · ${esc(data.time)}` : '')) : '';
             const summary = `
                 <div class="summary">
                     ${data.movie ? `<div class="movie">${esc(data.movie)}</div>` : ''}
-                    ${data.date ? `<div class="when">${esc(formatThaiDate(data.date))}${data.time ? ` · รอบ ${esc(data.time)} น.` : ''}</div>` : ''}
-                    ${data.name ? `<div class="label">ชื่อผู้จอง</div><div class="value">${esc(data.name)}</div>` : ''}
-                    <div class="label">เลขจอง</div><div class="value">${esc(data.bookingId)}</div>
-                    <div class="label">จำนวน</div><div class="value">${data.seats.length} ที่นั่ง</div>
+                    ${when ? `<div class="when">${when}</div>` : ''}
+                    ${data.name ? `<div class="label">${tr('ชื่อผู้จอง', 'Name')}</div><div class="value">${esc(data.name)}</div>` : ''}
+                    <div class="label">${tr('เลขจอง', 'Booking no.')}</div><div class="value">${esc(data.bookingId)}</div>
+                    <div class="label">${tr('จำนวน', 'Seats')}</div><div class="value">${tr(data.seats.length + ' ที่นั่ง', String(data.seats.length))}</div>
                 </div>
-                <p class="tip">แสดง QR ที่หน้าโรงภาพยนตร์<br>1 QR ต่อ 1 ที่นั่ง · กรุณาเพิ่มความสว่างหน้าจอ</p>`;
+                <p class="tip">${tr('แสดง QR ที่หน้าโรงภาพยนตร์<br>1 QR ต่อ 1 ที่นั่ง · กรุณาเพิ่มความสว่างหน้าจอ',
+                    'Show your QR code at the theatre entrance<br>1 QR per seat · Please turn up your screen brightness')}</p>`;
             const tickets = data.seats.map((t, i) => {
                 const payload = [QR_PREFIX, data.bookingId, t.seat, t.token].join('|');
                 return `
                     <section class="ticket">
-                        <div class="seat">ที่นั่ง ${esc(t.seat)}</div>
-                        <div class="qr" aria-label="QR ที่นั่ง ${esc(t.seat)}">${qrSvg(payload)}</div>
-                        ${data.seats.length > 1 ? `<button class="share" type="button" onclick="shareSeat(${i})">แชร์ที่นั่งนี้ให้เพื่อน</button>` : ''}
+                        <div class="seat">${tr('ที่นั่ง', 'Seat')} ${esc(t.seat)}</div>
+                        <div class="qr" aria-label="${tr('QR ที่นั่ง', 'QR for seat')} ${esc(t.seat)}">${qrSvg(payload)}</div>
+                        ${data.seats.length > 1 ? `<button class="share" type="button" onclick="shareSeat(${i})">${tr('แชร์ที่นั่งนี้ให้เพื่อน', 'Share this seat with a friend')}</button>` : ''}
                     </section>`;
             }).join('');
             app.innerHTML = summary + tickets;
