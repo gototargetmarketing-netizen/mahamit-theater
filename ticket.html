@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0f0f10">
     <!-- หน้าบัตรของลูกค้าแต่ละคน ไม่ให้ Google เก็บไปแสดงในผลค้นหา -->
     <meta name="robots" content="noindex">
-    <title>บัตรเข้าชม | MAHAMIT THEATER</title>
+    <title>บัตรเข้าชม | MAHAMIT THEATRE</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
@@ -102,11 +102,11 @@
 <body>
     <header>
         <div class="brand">MAHAMIT</div>
-        <div class="title">THEATER</div>
+        <div class="title">THEATRE</div>
     </header>
     <main id="app"></main>
     <div class="toast" id="toast"></div>
-    <footer>CLASSIC &amp; MODERN CINEMA EXPERIENCE</footer>
+    <footer>A VINTAGE CINEMA EXPERIENCE</footer>
     <script>
         // ต้องตรงกับ QR_PREFIX ใน Code.gs (หน้าสแกนอ่านรูปแบบ MT1|เลขจอง|ที่นั่ง|รหัสลับ)
         const QR_PREFIX = 'MT1';
@@ -174,7 +174,7 @@
         async function shareSeat(index) {
             const ticket = ticketData.seats[index];
             const url = seatLink(ticketData, ticket);
-            const text = `บัตรเข้าชม ${ticketData.movie} ที่นั่ง ${ticket.seat} | MAHAMIT THEATER`;
+            const text = `บัตรเข้าชม ${ticketData.movie} ที่นั่ง ${ticket.seat} | MAHAMIT THEATRE`;
             try {
                 if (navigator.share) {
                     await navigator.share({ title: text, text: text, url: url });
