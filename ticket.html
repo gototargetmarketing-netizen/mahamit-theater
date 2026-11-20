@@ -74,6 +74,26 @@
             border-radius: 999px;
             cursor: pointer;
         }
+        /* ปุ่มบันทึกบัตรเป็นรูป (20 พ.ย. 2569) ย้ายมาจากปุ่ม "บันทึกใบจอง" ในหน้าจองสำเร็จ รูปนี้มี QR จริง */
+        .save {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            border: 2px solid #ffe38a;
+            background: linear-gradient(135deg, #f3d27a, #d4af37);
+            color: #111;
+            font: inherit;
+            font-size: 18px;
+            font-weight: 700;
+            padding: 15px 18px;
+            border-radius: 14px;
+            cursor: pointer;
+            box-shadow: 0 6px 18px rgba(212,175,55,.25);
+        }
+        .save:disabled { opacity: .7; cursor: wait; }
+        .save-note { font-size: 13px; color: var(--muted); text-align: center; margin: 8px 0 18px; line-height: 1.6; }
         .error {
             background: #2a1216;
             border-left: 4px solid var(--red);
@@ -233,6 +253,11 @@
                     <div class="label">${tr('เลขจอง', 'Booking no.')}</div><div class="value">${esc(data.bookingId)}</div>
                     <div class="label">${tr('จำนวน', 'Seats')}</div><div class="value">${tr(data.seats.length + ' ที่นั่ง', String(data.seats.length))}</div>
                 </div>
+                <button class="save" id="saveBtn" type="button" onclick="saveTicketImage()">
+                    <span aria-hidden="true">⬇</span><span id="saveLabel">${tr('บันทึกบัตรเป็นรูป', 'Save tickets as image')}</span>
+                </button>
+                <p class="save-note">${tr('รูปมี QR ครบทุกที่นั่ง ใช้สแกนเข้าโรงได้ เปิดจากอัลบั้มรูปได้แม้ไม่มีเน็ต',
+                    'The image includes every seat\'s QR code and can be scanned at the entrance, even offline.')}</p>
                 <p class="tip">${tr('แสดง QR ที่หน้าโรงภาพยนตร์<br>1 QR ต่อ 1 ที่นั่ง · กรุณาเพิ่มความสว่างหน้าจอ',
                     'Show your QR code at the theatre entrance<br>1 QR per seat · Please turn up your screen brightness')}</p>`;
             const tickets = data.seats.map((t, i) => {
@@ -241,10 +266,221 @@
                     <section class="ticket">
                         <div class="seat">${tr('ที่นั่ง', 'Seat')} ${esc(t.seat)}</div>
                         <div class="qr" aria-label="${tr('QR ที่นั่ง', 'QR for seat')} ${esc(t.seat)}">${qrSvg(payload)}</div>
-                        ${data.seats.length > 1 ? `<button class="share" type="button" onclick="shareSeat(${i})">${tr('แชร์ที่นั่งนี้ให้เพื่อน', 'Share this seat with a friend')}</button>` : ''}
+                        ${data.seats.length > 1 ? `<button class="share" type="button" onclick="shareSeat(${i})">${tr('ส่งที่นั่งนี้ให้เพื่อน', 'Send this seat to a friend')}</button>` : ''}
                     </section>`;
             }).join('');
             app.innerHTML = summary + tickets;
+            // สร้างรูปรอไว้เลย: iPhone เปิดหน้าแชร์ได้เฉพาะตอนที่กดปุ่มแล้วเรียกทันที ถ้ารอสร้างรูปนานจะถูกปฏิเสธ
+            ticketImage = { key: location.hash, blob: null, promise: null };
+            prepareTicketImage().catch(err => console.warn('Prepare ticket image failed:', err));
+        }
+
+        /* ----------------------------------------------------
+         * บันทึกบัตรเป็นรูป PNG (20 พ.ย. 2569 ผู้ใช้ขอให้โหลดและแชร์ตั๋วได้ในที่เดียว)
+         * รูปเดียวมี QR ครบทุกที่นั่ง (ผู้ใช้เลือก) สแกนเข้าโรงจากรูปในอัลบั้มได้แม้เน็ตไม่ดี
+         * วาดลง canvas เอง (ไม่ใช้ html2canvas) เหตุผลเดียวกับรูปใบจองใน index.html:
+         * ขนาดตัวหนังสือตายตัว ไม่เพี้ยนตามการตั้งค่าตัวหนังสือใหญ่ของเครื่อง / ไม่ต้องรอรูปอื่นในหน้า
+         * ข้อความไทยวาดชิดซ้ายแล้วคำนวณกึ่งกลางเอง (Safari บน iPhone บางรุ่นจัดกึ่งกลางภาษาไทยเพี้ยน)
+         * ---------------------------------------------------- */
+        let ticketImage = { key: '', blob: null, promise: null };
+
+        function withTimeout(promise, ms) {
+            return Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))]);
+        }
+
+        // ตัดบรรทัดตามความกว้าง ภาษาไทยไม่มีช่องว่างระหว่างคำ จึงใช้ Intl.Segmenter แบ่งคำ (ไม่มี = ตัดทีละตัวอักษร)
+        function wrapLines(ctx, text, maxWidth) {
+            const parts = typeof Intl !== 'undefined' && Intl.Segmenter
+                ? Array.from(new Intl.Segmenter('th', { granularity: 'word' }).segment(text), x => x.segment)
+                : Array.from(text);
+            const lines = [];
+            let line = '';
+            parts.forEach(part => {
+                if (line && ctx.measureText(line + part).width > maxWidth) { lines.push(line.trim()); line = part.trimStart(); }
+                else line += part;
+            });
+            if (line.trim()) lines.push(line.trim());
+            return lines.length ? lines : [''];
+        }
+
+        function roundRect(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+        }
+
+        // วาด QR ทีละช่องลง canvas (คมชัด สแกนได้แม้ย่อรูป) ข้อความใน QR เหมือนที่แสดงบนหน้านี้
+        function drawQr(ctx, text, x, y, size) {
+            const qr = qrcode(0, 'M');
+            qr.addData(text);
+            qr.make();
+            const count = qr.getModuleCount();
+            const quiet = 4; // ขอบขาวรอบ QR ตามมาตรฐาน เครื่องสแกนต้องใช้
+            const cell = Math.floor(size / (count + quiet * 2));
+            const drawn = cell * (count + quiet * 2);
+            const ox = x + Math.floor((size - drawn) / 2) + cell * quiet;
+            const oy = y + Math.floor((size - drawn) / 2) + cell * quiet;
+            ctx.fillStyle = '#000';
+            for (let r = 0; r < count; r++) for (let c = 0; c < count; c++) {
+                if (qr.isDark(r, c)) ctx.fillRect(ox + c * cell, oy + r * cell, cell, cell);
+            }
+        }
+
+        function drawTicketImage(data) {
+            const W = 1080, PAD = 72, CARD = W - PAD * 2, QR = 600;
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const F = (weight, size) => `${weight} ${size}px Prompt, Arial, sans-serif`;
+            // คำนวณความสูงก่อน (หัว + รายละเอียด + การ์ดที่นั่ง) แล้วค่อยวาดจริง
+            ctx.font = F(700, 52);
+            const titleLines = wrapLines(ctx, data.movie || '', W - PAD * 2);
+            const when = data.date ? tr(formatThaiDate(data.date) + (data.time ? ` · รอบ ${data.time} น.` : ''),
+                formatEnDate(data.date) + (data.time ? ` · ${data.time}` : '')) : '';
+            const seatCard = 64 + 60 + 24 + QR + 48;
+            // หัว 364 + ชื่อเรื่อง + วันเวลา + ช่องไฟ 20 + ชื่อ/เลขจอง 150 + การ์ดที่นั่ง + ข้อความท้าย 100 + ขอบล่าง 80
+            const H = 364 + titleLines.length * 66 + (when ? 56 : 0) + 20 + 150 + data.seats.length * (seatCard + 36) + 100 + 80;
+            canvas.width = W;
+            canvas.height = H;
+            ctx.textBaseline = 'top';
+            ctx.textAlign = 'left';
+            const center = (text, y, font, color) => {
+                ctx.font = font; ctx.fillStyle = color;
+                ctx.fillText(text, Math.round((W - ctx.measureText(text).width) / 2), y);
+            };
+            // ตัวอักษรอังกฤษเว้นระยะเอง (letterSpacing ใช้ไม่ได้ทุกเบราว์เซอร์)
+            const spaced = (text, y, font, color, gap) => {
+                ctx.font = font; ctx.fillStyle = color;
+                const widths = Array.from(text).map(ch => ctx.measureText(ch).width);
+                let x = (W - (widths.reduce((a, b) => a + b, 0) + gap * (text.length - 1))) / 2;
+                Array.from(text).forEach((ch, i) => { ctx.fillText(ch, Math.round(x), y); x += widths[i] + gap; });
+            };
+
+            const bg = ctx.createLinearGradient(0, 0, 0, H);
+            bg.addColorStop(0, '#2a0a10'); bg.addColorStop(0.18, '#0f0f10'); bg.addColorStop(1, '#0b0b0c');
+            ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+            ctx.strokeStyle = '#d4af37'; ctx.lineWidth = 6;
+            roundRect(ctx, 18, 18, W - 36, H - 36, 36); ctx.stroke();
+
+            let y = 76;
+            spaced('MAHAMIT', y, F(600, 30), '#d4af37', 14); y += 48;
+            spaced('THEATRE', y, F(700, 64), '#ffffff', 10); y += 88;
+            spaced('A VINTAGE CINEMA EXPERIENCE', y, F(400, 22), '#a1a1aa', 6); y += 54;
+            // ป้าย "บัตรเข้าชม"
+            const pill = tr('บัตรเข้าชม · ใช้สแกนเข้าโรง', 'Admission ticket · Scan at entrance');
+            ctx.font = F(600, 28);
+            const pw = ctx.measureText(pill).width + 64;
+            ctx.fillStyle = 'rgba(212,175,55,.14)'; roundRect(ctx, (W - pw) / 2, y, pw, 58, 29); ctx.fill();
+            ctx.strokeStyle = '#d4af37'; ctx.lineWidth = 2; roundRect(ctx, (W - pw) / 2, y, pw, 58, 29); ctx.stroke();
+            center(pill, y + 11, F(600, 28), '#ffe38a'); y += 58 + 40;
+
+            titleLines.forEach(line => { center(line, y, F(700, 52), '#d4af37'); y += 66; });
+            if (when) { center(when, y + 4, F(400, 32), '#f4f1ea'); y += 56; }
+            y += 20;
+            const info = [];
+            if (data.name) info.push(tr('ชื่อผู้จอง ', 'Name ') + data.name);
+            info.push(tr('เลขจอง ', 'Booking no. ') + data.bookingId + tr(' · ' + data.seats.length + ' ที่นั่ง', ' · ' + data.seats.length + (data.seats.length > 1 ? ' seats' : ' seat')));
+            info.forEach(t => { ctx.font = F(400, 28); const l = wrapLines(ctx, t, W - PAD * 2)[0]; center(l, y, F(400, 28), '#d4d4d8'); y += 44; });
+            y += 130 - info.length * 44 + 20;
+
+            data.seats.forEach(t => {
+                ctx.fillStyle = '#ffffff'; roundRect(ctx, PAD, y, CARD, seatCard, 32); ctx.fill();
+                center(tr('ที่นั่ง ', 'Seat ') + t.seat, y + 48, F(700, 60), '#1a1a1a');
+                drawQr(ctx, [QR_PREFIX, data.bookingId, t.seat, t.token].join('|'), (W - QR) / 2, y + 48 + 60 + 24, QR);
+                y += seatCard + 36;
+            });
+
+            y += 10;
+            center(tr('1 QR ต่อ 1 ที่นั่ง · แต่ละ QR ใช้เข้าโรงได้ครั้งเดียว', '1 QR per seat · Each QR can be used once'), y, F(400, 26), '#a1a1aa');
+            y += 48;
+            center(tr('กรุณาเพิ่มความสว่างหน้าจอตอนสแกน', 'Please turn up your screen brightness when scanning'), y, F(400, 26), '#a1a1aa');
+            return canvas;
+        }
+
+        function prepareTicketImage() {
+            if (ticketImage.blob) return Promise.resolve(ticketImage.blob);
+            if (ticketImage.promise) return ticketImage.promise;
+            const data = ticketData;
+            const key = ticketImage.key;
+            const fontsReady = document.fonts && document.fonts.load
+                ? withTimeout(Promise.all(['400 28px Prompt', '600 28px Prompt', '700 52px Prompt'].map(f => document.fonts.load(f, 'บัตรเข้าชม MAHAMIT'))), 3000).catch(() => null)
+                : Promise.resolve();
+            const promise = ticketImage.promise = withTimeout(fontsReady.then(() => new Promise((resolve, reject) =>
+                drawTicketImage(data).toBlob(blob => blob ? resolve(blob) : reject(new Error('toBlob')), 'image/png'))), 20000)
+                .then(blob => { if (ticketImage.key === key) ticketImage.blob = blob; return blob; })
+                .finally(() => { if (ticketImage.promise === promise) ticketImage.promise = null; });
+            return promise;
+        }
+
+        // แยกตามเครื่องว่าจะส่งรูปให้ลูกค้าแบบไหน (เหมือน deliverImage ใน index.html)
+        // • ในแอป LINE/Facebook/IG: หน้าแชร์และการดาวน์โหลดมักใช้ไม่ได้ → แสดงรูปเต็มจอให้กดค้าง
+        // • iPhone/iPad: หน้าแชร์มีทั้ง "บันทึกรูปภาพ" และส่งเข้า LINE (ดาวน์โหลดจะไปอยู่ในแอปไฟล์ ลูกค้าหาไม่เจอ)
+        // • Android และคอม: ดาวน์โหลดตรงๆ (หน้าแชร์ Android ส่วนใหญ่ไม่มีปุ่มบันทึกลงแกลเลอรี)
+        async function deliverImage(blob, fileName, shareTitle) {
+            const ua = navigator.userAgent || '';
+            const inAppBrowser = /\bLine\/|FBAN|FBAV|FB_IAB|Instagram/i.test(ua);
+            const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            if (inAppBrowser) { showImagePreview(blob); return; }
+            if (isIOS) {
+                const file = new File([blob], fileName, { type: 'image/png' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try { await navigator.share({ files: [file], title: shareTitle }); }
+                    catch (err) { if (!err || err.name !== 'AbortError') showImagePreview(blob); }
+                } else {
+                    showImagePreview(blob);
+                }
+                return;
+            }
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(() => { URL.revokeObjectURL(url); link.remove(); }, 1500);
+            showToast(tr('บันทึกรูปบัตรแล้ว ดูได้ในโฟลเดอร์ดาวน์โหลด/แกลเลอรี', 'Ticket image saved to your downloads/gallery.'));
+        }
+
+        // ทางสำรอง (แอป LINE/Facebook หรือเปิดหน้าแชร์ไม่ได้): แสดงรูปเต็มจอให้กดค้างบันทึก
+        // Android ในแอป LINE มักไม่มีเมนูบันทึกตอนกดค้าง จึงบอกให้แคปหน้าจอแทน
+        function showImagePreview(blob) {
+            const url = URL.createObjectURL(blob);
+            const hint = /Android/i.test(navigator.userAgent || '')
+                ? tr('กดค้างที่รูปเพื่อบันทึก<br>ถ้าไม่มีเมนูบันทึก ให้แคปหน้าจอนี้ไว้', 'Press and hold the image to save it.<br>If there is no save option, take a screenshot.')
+                : tr('กดค้างที่รูป แล้วเลือก "บันทึกรูปภาพ"', 'Press and hold the image, then choose "Save to Photos".');
+            const overlay = document.createElement('div');
+            overlay.id = 'imagePreview';
+            overlay.style.cssText = 'position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.94);display:flex;flex-direction:column;align-items:center;padding:16px;gap:12px;overflow-y:auto;';
+            overlay.innerHTML = `<p style="color:#ffd65a;font-size:15px;text-align:center;margin:0;line-height:1.6;">${hint}</p>
+                <img src="${url}" alt="${tr('บัตรเข้าชม', 'Tickets')}" style="width:100%;max-width:480px;border-radius:14px;">
+                <button type="button" style="background:#8b1528;color:#fff;border:1px solid #d4af37;border-radius:12px;padding:10px 28px;font:inherit;font-weight:700;flex-shrink:0;">${tr('ปิด', 'Close')}</button>`;
+            overlay.querySelector('button').onclick = () => { overlay.remove(); URL.revokeObjectURL(url); };
+            document.body.appendChild(overlay);
+        }
+
+        async function saveTicketImage() {
+            const btn = document.getElementById('saveBtn');
+            const label = document.getElementById('saveLabel');
+            const fileName = tr('บัตร-', 'Tickets-') + ticketData.bookingId + '.png';
+            let blob = ticketImage.blob;
+            if (!blob) {
+                btn.disabled = true;
+                label.textContent = tr('กำลังสร้างรูป…', 'Preparing…');
+                try {
+                    blob = await prepareTicketImage();
+                } catch (err) {
+                    console.error('Ticket image error:', err);
+                    alert(tr('บันทึกรูปไม่สำเร็จ กรุณาแคปหน้าจอ QR แต่ละที่นั่งไว้แทน', 'Could not create the image. Please take a screenshot of each QR code instead.'));
+                    return;
+                } finally {
+                    btn.disabled = false;
+                    label.textContent = tr('บันทึกบัตรเป็นรูป', 'Save tickets as image');
+                }
+            }
+            await deliverImage(blob, fileName, tr('บัตรเข้าชม MAHAMIT THEATRE', 'MAHAMIT THEATRE tickets'));
         }
 
         let ticketData = readTicketData();
