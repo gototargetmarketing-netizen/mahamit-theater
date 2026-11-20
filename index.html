@@ -1102,8 +1102,9 @@ function posterFallback(img) {
                     </div>
                 </div>
 
-<button onclick="goToStep(1)" class="text-xs text-[#d4af37] hover:text-white bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition border border-zinc-700">
-    <i class="fas fa-arrow-left text-[#d4af37]"></i> <span class="th">เปลี่ยนเรื่อง</span><span class="en" lang="en">Change film</span>
+<!-- ปุ่มทองแบบเดียวกับปุ่ม "ย้อนกลับ" (ผู้ใช้ขอ 20 พ.ย. 2569 เดิมปุ่มเทาตัวเล็ก ลูกค้ามองไม่เห็น) -->
+<button type="button" onclick="goToStep(1)" class="bg-[#d4af37] hover:bg-[#e5c04b] text-black font-bold text-base px-5 py-3.5 rounded-xl border-2 border-[#f1d77a] shadow-lg shadow-black/40 transition inline-flex items-center justify-center gap-2 shrink-0">
+    <i class="fa-solid fa-arrow-left"></i> <span class="th">เปลี่ยนเรื่อง</span><span class="en" lang="en">Change film</span>
 </button>
 
             </div>
@@ -1309,26 +1310,16 @@ function posterFallback(img) {
                             </div>
                         </div>
 
-                        <!-- รับทราบเงื่อนไข: ซื้อแล้วเปลี่ยนรอบไม่ได้ (ผู้ใช้ขอ 20 พ.ย. 2569) ต้องติ๊กก่อนยืนยันการจอง แบบเดียวกับ PDPA -->
-                        <div id="noChangeBox" class="bg-zinc-900/90 p-4 rounded-xl border border-zinc-800 transition">
-                            <label class="flex items-start gap-3 cursor-pointer">
-                                <input type="checkbox" id="noChangeConsent" required class="mt-0.5 w-5 h-5 shrink-0 accent-[#8b1528] cursor-pointer">
-                                <span class="text-xs text-zinc-300 leading-relaxed">
-                                    <span class="th">ข้าพเจ้ารับทราบว่า <b class="text-white">เมื่อซื้อตั๋วแล้ว ไม่สามารถเปลี่ยนรอบฉายได้</b> กรุณาตรวจสอบวันและรอบฉายให้ถูกต้องก่อนยืนยันการจอง</span>
-                                    <span class="en" lang="en">I understand that <b class="text-white">once purchased, tickets cannot be changed to another showtime.</b> Please check the date and showtime before booking.</span>
-                                </span>
-                            </label>
-                        </div>
-
-                        <!-- ยินยอม PDPA (ต้องติ๊กก่อนยืนยันการจอง) ข้อความเดียวกับคอนเสิร์ต ปรับให้เข้ากับโรงหนัง -->
+                        <!-- ช่องติ๊กเดียว: รับทราบว่าซื้อแล้วเปลี่ยนรอบไม่ได้ + ยินยอม PDPA (ผู้ใช้ขอรวม 20 พ.ย. 2569 ลูกค้าจะได้ติ๊กครั้งเดียว)
+                             เดิมแยก 2 ช่อง (noChangeBox / pdpaBox) Code.gs ยังบันทึกทั้ง PDPA Consent และ No-Change Consent จากการติ๊กช่องนี้ -->
                         <div id="pdpaBox" class="bg-zinc-900/90 p-4 rounded-xl border border-zinc-800 transition">
                             <label class="flex items-start gap-3 cursor-pointer">
                                 <input type="checkbox" id="pdpaConsent" required class="mt-0.5 w-5 h-5 shrink-0 accent-[#8b1528] cursor-pointer">
                                 <span class="text-xs text-zinc-300 leading-relaxed">
-                                    <span class="th">ข้าพเจ้าได้อ่านและยอมรับ
+                                    <span class="th">ข้าพเจ้ารับทราบว่า <b class="text-white">เมื่อซื้อตั๋วแล้ว ไม่สามารถเปลี่ยนรอบฉายได้</b> (กรุณาตรวจสอบวันและรอบฉายให้ถูกต้อง) และได้อ่านและยอมรับ
                                     <button type="button" onclick="event.preventDefault(); openPrivacyModal();" class="text-brand-gold font-bold underline">นโยบายความเป็นส่วนตัว</button>
                                     และยินยอมให้โรงภาพยนตร์ใช้ข้อมูลส่วนบุคคลของข้าพเจ้าตามที่กรอกไว้ เพื่อการจอง การตรวจสอบการชำระเงิน การเข้าชม และการดำเนินการที่เกี่ยวข้อง</span>
-                                    <span class="en" lang="en">I have read and accept the
+                                    <span class="en" lang="en">I understand that <b class="text-white">tickets cannot be changed to another showtime once purchased</b> (please check the date and showtime), and I have read and accept the
                                     <button type="button" onclick="event.preventDefault(); openPrivacyModal();" class="text-brand-gold font-bold underline">Privacy Policy</button>
                                     and consent to the theatre using the personal data above for booking, payment verification, admission and related purposes.</span>
                                 </span>
@@ -1405,8 +1396,10 @@ function posterFallback(img) {
 
                             <div class="bg-brand-card p-3 rounded-lg border border-zinc-800 text-[11px] text-brand-lightGray space-y-1">
                                 <p class="text-brand-gold font-semibold"><i class="fa-solid fa-circle-info mr-1"></i> <span class="th">ข้อกำหนดสำคัญ:</span><span class="en" lang="en">Important:</span></p>
-                                <p>• <span class="th">หลังจากกด ยืนยันการจอง แล้ว ระบบจะส่งข้อมูลให้แอดมินตรวจสอบ</span><span class="en" lang="en">After you book, our team will check your payment.</span></p>
-                                <p>• <span class="th">ทางแอดมินจะตรวจสอบการโอนเงิน และจัดส่ง QR Code เข้างานให้ท่านผ่านทางอีเมลอีกครั้ง</span><span class="en" lang="en">Your QR admission ticket will then be sent to your email.</span></p>
+                                <!-- ข้อความใหม่ 20 พ.ย. 2569 (ผู้ใช้ให้มา): ส่ง QR ทันทีหลังจอง ไม่ต้องรอแอดมินตรวจแล้ว -->
+                                <p>• <span class="th">หลังจากกดยืนยันการจอง ระบบจะจัดส่ง QR Code สำหรับเข้าชมภาพยนตร์ไปยังอีเมลของท่าน</span><span class="en" lang="en">After you confirm your booking, your QR admission tickets will be sent to your email.</span></p>
+                                <p>• <span class="th">กรุณาตรวจสอบความถูกต้องของอีเมลก่อนกดยืนยันการจอง</span><span class="en" lang="en">Please make sure your email address is correct before confirming.</span></p>
+                                <p>• <span class="th">หากไม่ได้รับอีเมลภายใน 5 นาที กรุณาติดต่อเจ้าหน้าที่เพื่อขอความช่วยเหลือ โทร <a href="tel:0905235223" class="text-brand-gold underline">090 523 5223</a></span><span class="en" lang="en">If you do not receive the email within 5 minutes, please contact our staff for help: <a href="tel:0905235223" class="text-brand-gold underline">090 523 5223</a></span></p>
                             </div>
                         </div>
                     </div>
@@ -1582,20 +1575,29 @@ function posterFallback(img) {
                     <div class="min-w-0">
                         <!-- ยืนยันทันที + ส่ง QR (มหามิตรตัดสินใจ 20 พ.ย. 2569 ไม่ต้องรอแอดมินตรวจสลิป) -->
                         <div data-st="confirmed">
-                            <h4 class="text-[#FFD65A] font-bold text-base sm:text-lg">
-                                <span class="th">จองสำเร็จ ส่ง QR เข้าชมให้แล้ว</span><span class="en" lang="en">Booking confirmed — QR tickets sent</span>
-                            </h4>
-                            <p class="text-zinc-300 text-sm leading-relaxed mt-2">
-                                <span class="th">QR Code สำหรับเข้าชมส่งไปที่อีเมลด้านล่างแล้ว (1 QR ต่อ 1 ที่นั่ง)
-                                แสดง QR ที่หน้าโรงได้เลย หรือกดปุ่ม "เปิดบัตรเข้าชม" ด้านล่าง</span>
-                                <span class="en" lang="en">Your QR admission tickets have been sent to the email below (1 QR per seat).
-                                Show them at the entrance, or tap "Open tickets" below.</span>
-                            </p>
-                            <!-- ส่งอีเมลไม่สำเร็จ (เช่น โควตาอีเมลวันนั้นหมด): ให้เปิดบัตรจากปุ่มแล้วเก็บไว้ -->
-                            <p id="email-failed-note" class="hidden text-[#ff9b9b] text-sm leading-relaxed mt-2 font-bold">
-                                <span class="th">ระบบส่งอีเมลไม่สำเร็จ กรุณากด "เปิดบัตรเข้าชม" แล้วแคปหน้าจอเก็บไว้</span>
-                                <span class="en" lang="en">We could not send the email. Please tap "Open tickets" and take a screenshot.</span>
-                            </p>
+                            <!-- ส่งอีเมลสำเร็จ -->
+                            <div id="email-sent-note">
+                                <h4 class="text-[#FFD65A] font-bold text-base sm:text-lg">
+                                    <span class="th">จองสำเร็จ ส่ง QR เข้าชมให้แล้ว</span><span class="en" lang="en">Booking confirmed — QR tickets sent</span>
+                                </h4>
+                                <p class="text-zinc-300 text-sm leading-relaxed mt-2">
+                                    <span class="th">QR Code สำหรับเข้าชมส่งไปที่อีเมลด้านล่างแล้ว (1 QR ต่อ 1 ที่นั่ง ถ้าไม่เห็น กรุณาดูในจดหมายขยะ)
+                                    กดปุ่ม "เปิดบัตรเข้าชม / บันทึก" ด้านล่าง เพื่อดู QR หรือบันทึกบัตรเก็บไว้ในเครื่อง</span>
+                                    <span class="en" lang="en">Your QR admission tickets have been sent to the email below (1 QR per seat; please also check your spam folder).
+                                    Tap "Open / save tickets" below to view your QR codes or save them to your phone.</span>
+                                </p>
+                            </div>
+                            <!-- ส่งอีเมลไม่สำเร็จ (เช่น โควตาอีเมลวันนั้นหมด): หัวข้อไม่บอกว่าส่งแล้ว (เดิมขัดกับคำเตือนแดง เจอตอนตรวจระบบ 20 พ.ย. 2569)
+                                 การจองสำเร็จแล้ว ให้เปิดบัตรจากปุ่มแล้วบันทึกเก็บไว้ -->
+                            <div id="email-failed-note" class="hidden">
+                                <h4 class="text-[#FFD65A] font-bold text-base sm:text-lg">
+                                    <span class="th">จองสำเร็จ</span><span class="en" lang="en">Booking confirmed</span>
+                                </h4>
+                                <p class="text-[#ff9b9b] text-sm leading-relaxed mt-2 font-bold">
+                                    <span class="th">ระบบส่งอีเมลไม่สำเร็จ กรุณากด "เปิดบัตรเข้าชม / บันทึก" แล้วบันทึกบัตรเก็บไว้ (1 QR ต่อ 1 ที่นั่ง)</span>
+                                    <span class="en" lang="en">We could not send the email. Please tap "Open / save tickets" and save your tickets (1 QR per seat).</span>
+                                </p>
+                            </div>
                         </div>
                         <!-- Apps Script รุ่นเก่า (ยังรอแอดมินตรวจ) -->
                         <div data-st="pending">
@@ -1632,28 +1634,20 @@ function posterFallback(img) {
                 </div>
             </div>
 
-            <!-- ปุ่มเปิดบัตร (หน้า ticket.html มี QR ทุกที่นั่ง) ลูกค้าไม่ต้องรออีเมล ลิงก์มาจาก Code.gs ตอนจองสำเร็จ -->
+            <!-- ปุ่มเปิดบัตร (หน้า ticket.html มี QR ทุกที่นั่ง + บันทึกเป็นรูป + ส่งที่นั่งให้เพื่อน) ลูกค้าไม่ต้องรออีเมล
+                 ลิงก์มาจาก Code.gs ตอนจองสำเร็จ / รวมการบันทึกและแชร์ไว้ที่หน้าบัตรที่เดียว (ผู้ใช้เลือก 20 พ.ย. 2569) -->
             <a id="btn-open-ticket" href="#" target="_blank" rel="noopener"
                class="hidden print-hide mb-3 flex items-center justify-center gap-3 px-5 py-4 rounded-xl font-bold text-black text-lg transition"
                style="background:linear-gradient(135deg,#F3D27A,#D4AF37);border:2px solid #FFE38A;box-shadow:0 6px 18px rgba(212,175,55,.3);">
                 <i class="fa-solid fa-qrcode text-2xl"></i>
-                <span><span class="th">เปิดบัตรเข้าชม (QR)</span><span class="en" lang="en">Open tickets (QR)</span></span>
+                <span><span class="th">เปิดบัตรเข้าชม / บันทึก</span><span class="en" lang="en">Open / save tickets</span></span>
             </a>
 
             <!-- ACTION BUTTONS -->
-            <div class="print-hide grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="print-hide grid grid-cols-1 gap-3">
 
-                <!-- ผู้ใช้ขอเปลี่ยนจากพิมพ์/PDF เป็นบันทึกรูป (ลูกค้าส่วนใหญ่จองผ่านมือถือ) ส่วน @media print ยังอยู่ ถ้ากด Ctrl+P เองก็ได้ใบจองพื้นขาว -->
-                <button type="button"
-                        id="btn-save-booking-image"
-                        onclick="saveBookingImage()"
-                        class="flex items-center justify-center gap-3 px-5 py-4 rounded-xl font-bold text-white transition"
-                        style="background:linear-gradient(135deg,#303033,#171719);
-                        border:1px solid #888;">
-                    <i class="fa-solid fa-image text-xl"></i>
-                    <span><span class="th">บันทึกใบจอง</span><span class="en" lang="en">Save booking</span></span>
-                </button>
-
+                <!-- ปุ่ม "บันทึกใบจอง" (รูปไม่มี QR) เอาออก 20 พ.ย. 2569: ลูกค้าอาจบันทึกแล้วนึกว่าเป็นตั๋ว
+                     การบันทึกย้ายไปปุ่ม "บันทึกบัตรเป็นรูป" ในหน้าบัตร (ticket.html) ซึ่งมี QR จริง ส่วน @media print ยังอยู่ -->
                 <button type="button"
                         onclick="resetToHome()"
                         class="flex items-center justify-center gap-3 px-5 py-4 rounded-xl font-bold text-white transition"
@@ -1765,8 +1759,6 @@ function posterFallback(img) {
             });
             document.getElementById('pdpaConsent').addEventListener('change', () =>
                 document.getElementById('pdpaBox').classList.remove('field-invalid'));
-            document.getElementById('noChangeConsent').addEventListener('change', () =>
-                document.getElementById('noChangeBox').classList.remove('field-invalid'));
         };
 
         // ข้อความที่มาจากชีต (แอดมินกรอก) ต้อง escape ก่อนใส่ใน HTML
@@ -2374,7 +2366,9 @@ function posterFallback(img) {
                 const timeout = setTimeout(() => finish(new Error(tr('เชื่อมต่อ Google Sheets ไม่สำเร็จ กรุณาลองใหม่', 'Could not connect to the booking system. Please try again.'))), timeoutMs);
                 function cleanup() {
                     clearTimeout(timeout);
-                    try { delete window[callbackName]; } catch (e) { window[callbackName] = undefined; }
+                    // ไม่ลบชื่อ callback ทิ้ง แต่เปลี่ยนเป็นฟังก์ชันว่าง: ถ้า Apps Script ตอบช้าเกินเวลาที่รอ
+                    // คำตอบที่มาถึงทีหลังจะเรียกชื่อนี้ ถ้าลบไปแล้วจะเกิด ReferenceError ใน Console (เจอตอนทดสอบ 20 พ.ย. 2569)
+                    window[callbackName] = () => {};
                     if (script && script.parentNode) script.parentNode.removeChild(script);
                 }
                 function finish(error, result) {
@@ -3435,10 +3429,8 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
         }
 
         // สลับภาษาบนหน้าจองสำเร็จ: สร้างรูปใบจองภาษาใหม่รอไว้ (iPhone ต้องมีรูปพร้อมตอนกดปุ่ม)
-        document.addEventListener('langchange', () => {
-            if (!lastBooking) return;
-            prepareBookingImage().catch(err => console.warn('Prepare booking image failed:', err));
-        });
+        // (ไม่สร้างรูปใบจองรอไว้แล้ว ตั้งแต่ 20 พ.ย. 2569 เอาปุ่ม "บันทึกใบจอง" ออก ใช้รูปบัตรในหน้า ticket.html แทน
+        //  ฟังก์ชันวาดรูปใบจองยังเก็บไว้ ถ้าจะกลับมาใช้ ให้เรียก prepareBookingImage หลังจองสำเร็จอีกครั้ง)
 
         // แยกตามเครื่องว่าจะส่งรูปให้ลูกค้าแบบไหน (ใช้ทั้งปุ่มบันทึกใบจองและปุ่มบันทึก QR)
         // • ในแอป LINE/Facebook/IG: หน้าแชร์และการดาวน์โหลดมักใช้ไม่ได้ → แสดงรูปเต็มจอให้กดค้าง
@@ -3533,7 +3525,6 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
             });
             document.querySelectorAll('.field-invalid').forEach(el => el.classList.remove('field-invalid'));
             document.getElementById('pdpaConsent').checked = false;
-            document.getElementById('noChangeConsent').checked = false;
             appliedDiscount = null;
             showDiscountMessage('', '');
             renderDiscountControls();
@@ -3626,7 +3617,10 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
             const btn = document.getElementById('btn-open-ticket');
             btn.classList.toggle('hidden', !ticketUrl);
             btn.href = ticketUrl || '#';
-            document.getElementById('email-failed-note').classList.toggle('hidden', !(state === 'confirmed' && !emailSent));
+            // ส่งอีเมลไม่สำเร็จ: สลับข้อความทั้งหัวข้อ (ไม่ให้เขียนว่า "ส่ง QR ให้แล้ว" คู่กับคำเตือนว่าส่งไม่สำเร็จ)
+            const failed = state === 'confirmed' && !emailSent;
+            document.getElementById('email-failed-note').classList.toggle('hidden', !failed);
+            document.getElementById('email-sent-note').classList.toggle('hidden', failed);
         }
         setBookingState('unknown', '', true); // ค่าตั้งต้นก่อนจองครั้งแรก (ซ่อนข้อความของสถานะอื่น)
 
@@ -3690,13 +3684,11 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
             } else if (!(slipFile.type.startsWith('image/') || slipFile.type === 'application/pdf' || slipFile.name.toLowerCase().endsWith('.pdf'))) {
                 invalid.push({ id: 'payment-slip', label: tr('สลิปการโอนเงิน', 'Payment slip'), message: tr('กรุณาแนบไฟล์รูปภาพหรือ PDF เท่านั้น', 'Please attach an image or PDF file only.') });
             }
-            if (!document.getElementById('noChangeConsent').checked) {
-                invalid.push({ id: 'noChangeBox', label: tr('รับทราบว่าเปลี่ยนรอบไม่ได้', 'No showtime changes'),
-                    message: tr('กรุณาติ๊กรับทราบว่าเมื่อซื้อตั๋วแล้วไม่สามารถเปลี่ยนรอบฉายได้', 'Please tick to confirm you understand tickets cannot be changed to another showtime.') });
-            }
+            // ช่องเดียวรวม "เปลี่ยนรอบไม่ได้" + นโยบายความเป็นส่วนตัว
             if (!document.getElementById('pdpaConsent').checked) {
-                invalid.push({ id: 'pdpaBox', label: tr('ยอมรับนโยบายความเป็นส่วนตัว', 'Privacy Policy consent'),
-                    message: tr('กรุณาอ่านและติ๊กยอมรับนโยบายความเป็นส่วนตัวก่อนยืนยันการจอง', 'Please read and tick to accept the Privacy Policy before booking.') });
+                invalid.push({ id: 'pdpaBox', label: tr('รับทราบเงื่อนไขและนโยบายความเป็นส่วนตัว', 'Terms and Privacy Policy'),
+                    message: tr('กรุณาติ๊กรับทราบว่าเมื่อซื้อตั๋วแล้วไม่สามารถเปลี่ยนรอบฉายได้ และยอมรับนโยบายความเป็นส่วนตัวก่อนยืนยันการจอง',
+                        'Please tick to confirm that tickets cannot be changed to another showtime and that you accept the Privacy Policy.') });
             }
             if (!invalid.length) return true;
 
@@ -3758,7 +3750,7 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
                     payTime: payTime,
                     timestamp: new Date().toISOString(),
                     pdpaConsent: true,
-                    noChangeConsent: true, // Code.gs บันทึกเวลาที่ยอมรับในคอลัมน์ No-Change Consent
+                    noChangeConsent: true, // ติ๊กช่องเดียวกับ PDPA แล้ว (ตรวจใน validateBookingForm) Code.gs บันทึกเวลาในคอลัมน์ No-Change Consent
                     lang: currentLang(), // ข้อความตอบกลับเป็นภาษาเดียวกับหน้าเว็บ
                     paymentSlip: paymentSlip
                 };
@@ -3857,16 +3849,12 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
                 submitBtn.innerHTML = originalButtonHtml;
                 // จองรายการถัดไปต้องติ๊กยินยอมใหม่ และกรอกโค้ดส่วนลดใหม่
                 document.getElementById('pdpaConsent').checked = false;
-                document.getElementById('noChangeConsent').checked = false;
                 appliedDiscount = null;
                 document.getElementById('discountCodeInput').value = '';
                 showDiscountMessage('', '');
                 renderDiscountControls();
                 hideBookingLoading();
                 goToStep(4);
-                // สร้างรูปใบจองรอไว้เลย พอลูกค้ากดปุ่มจะเปิดหน้าแชร์ได้ทันที
-                // (iPhone ไม่ยอมเปิดหน้าแชร์ถ้าหลังกดปุ่มต้องรอสร้างรูปนานเกินไป)
-                prepareBookingImage().catch(err => console.warn('Prepare booking image failed:', err));
             } catch (error) {
                 console.error('Booking/Drive upload error:', error);
                 // Always close the loading overlay and restore the button before showing the alert.
