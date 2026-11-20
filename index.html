@@ -621,9 +621,10 @@
     padding: 4px 0;
   }
 
+  /* รูปเล็กสัดส่วน 4:5 ตามรูปโปรโมชั่น (เดิม 54 × 72 ของโปสเตอร์หนัง) */
   #movieIntro .intro-thumb {
-    width: 54px;
-    height: 72px;
+    width: 56px;
+    height: 70px;
     padding: 3px;
     background: #202024;
     border: 2px solid #44444a;
@@ -643,8 +644,12 @@
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
   }
+  /* โปรเดียว: ไม่ต้องมีรูปเล็กให้เลือกและแถบเวลา */
+  #movieIntro.single .intro-thumbnails,
+  #movieIntro.single .intro-progress { display: none; }
+  #movieIntro .intro-caption:empty { display: none; }
 
   #movieIntro .intro-caption {
     color: #d7ad45;
@@ -669,7 +674,7 @@
   }
 
   #movieIntro .intro-progress-fill.running {
-    animation: introProgress 3s linear forwards;
+    animation: introProgress 4s linear forwards;
   }
 
   @keyframes introProgress {
@@ -702,7 +707,7 @@
 
     #movieIntro .intro-thumb {
       width: 48px;
-      height: 64px;
+      height: 60px;
     }
   }
 
@@ -788,12 +793,14 @@
     #movieIntro .intro-panel { gap: 6px; }
     #movieIntro .intro-heading { padding-top: 0; }
     #movieIntro .intro-thumbnails { gap: 8px; padding: 0; }
-    #movieIntro .intro-thumb { width: 40px; height: 54px; }
+    #movieIntro .intro-thumb { width: 40px; height: 50px; }
   }
 </style>
 
-<div id="movieIntro" role="dialog"
-     aria-label="โปสเตอร์ภาพยนตร์" data-en-aria-label="Movie posters"
+<!-- หน้าต่างต้อนรับ = รูปโปรโมชั่นที่แอดมินอัปโหลด (เปลี่ยน 20 พ.ย. 2569 เดิมเป็นสไลด์โปสเตอร์หนัง)
+     เริ่มแบบซ่อนไว้ แล้วเปิดเมื่อโหลดแล้วพบโปรที่เปิดอยู่ (startPromoIntro) ไม่มีโปร = ไม่ขึ้นเลย -->
+<div id="movieIntro" role="dialog" class="intro-hidden"
+     aria-label="โปรโมชั่น" data-en-aria-label="Promotions"
      aria-modal="true">
 
   <div class="intro-panel">
@@ -821,7 +828,7 @@
     <p class="intro-heading">MAHAMIT THEATRE</p>
 
     <div class="intro-poster-wrap">
-      <!-- ปกและปุ่มเลือกเรื่องสร้างจากรายชื่อหนังที่โหลดจาก Apps Script (startMovieIntro) -->
+      <!-- รูปโปรและรูปเล็กให้เลือก สร้างจากรายการที่โหลดจาก Apps Script ?action=promos (startPromoIntro) -->
       <!-- no-referrer: ไม่บอก Google ว่ารูปถูกเรียกจากเว็บไหน เซิร์ฟเวอร์รูปของ Drive บางครั้งปฏิเสธเมื่อมีข้อมูลนี้
            (เปิดลิงก์ตรงๆ เห็นรูป แต่ในหน้าเว็บไม่ขึ้น) ใช้กับรูปปกทุกจุด -->
       <img id="introPoster" referrerpolicy="no-referrer"
@@ -830,9 +837,7 @@
            style="opacity:0">
     </div>
 
-    <p class="intro-caption" id="introCaption">
-      <span class="th">กำลังโหลดรายชื่อภาพยนตร์…</span><span class="en" lang="en">Loading films…</span>
-    </p>
+    <p class="intro-caption" id="introCaption"></p>
 
     <div class="intro-thumbnails" id="introThumbs"></div>
 
@@ -869,9 +874,10 @@ function posterFallback(img) {
   const closeBtn = document.getElementById('introClose');
   const progress = document.getElementById('introProgress');
   const thumbsWrap = document.getElementById('introThumbs');
-  // สไลด์มาจากรายชื่อหนังที่แอดมินตั้งไว้ (เรียก startMovieIntro หลังโหลดรายชื่อหนังเสร็จ)
+  // สไลด์มาจากรูปโปรโมชั่นที่แอดมินตั้งไว้ (เรียก startPromoIntro หลังโหลดเสร็จ)
   let thumbs = [];
   let slides = [];
+  let slidesKey = '';
 
   let current = 0;
   let timer = null;
@@ -904,15 +910,17 @@ function posterFallback(img) {
       );
     });
 
+    clearTimeout(timer);
     progress.classList.remove('running');
+    // โปรเดียวไม่ต้องเลื่อน (แถบเวลาซ่อนอยู่)
+    if (slides.length < 2) return;
     void progress.offsetWidth;
     progress.classList.add('running');
 
-    clearTimeout(timer);
-
+    // 4 วินาทีต่อรูป (ต้องตรงกับ introProgress ใน CSS) รูปโปรมีตัวหนังสือ ต้องให้เวลาอ่านนานกว่าโปสเตอร์เดิม
     timer = setTimeout(function () {
       showSlide((current + 1) % slides.length);
-    }, 3000);
+    }, 4000);
   }
 
   function closeIntro() {
@@ -923,21 +931,41 @@ function posterFallback(img) {
     clearTimeout(transitionTimer);
     intro.classList.add('intro-hidden');
     document.body.style.overflow = '';
+    // บอกตัวจัดการปุ่มย้อนกลับ (navIntroClosed ในสคริปต์หลัก) ให้ล้างประวัติที่กันไว้ให้หน้าต่างนี้
+    if (window.navIntroClosed) window.navIntroClosed();
   }
+  window.closeMovieIntro = closeIntro;
+  window.isMovieIntroOpen = function () { return !closed && !intro.classList.contains('intro-hidden'); };
 
-  // สร้างปุ่มเลือกเรื่องด้วย DOM (ไม่ใช้ innerHTML) เพราะชื่อหนังมาจากชีต
-  window.startMovieIntro = function (movies) {
-    slides = (movies || []).filter(function (m) { return m.poster; }).map(function (m) {
-      return { src: m.poster, alt: m.title, caption: m.title };
+  // เรียกได้หลายครั้ง (ครั้งแรกจากรายการที่จำไว้ในเครื่อง แล้วอีกครั้งเมื่อโหลดจาก Apps Script เสร็จ)
+  // canOpen = ยังเปิดหน้าต่างใหม่ได้ไหม (ลูกค้ายังอยู่หน้าแรกและเพิ่งเปิดเว็บ) — หน้าต่างที่เปิดอยู่แล้วอัปเดตรูปได้เสมอ
+  // สร้างปุ่มด้วย DOM (ไม่ใช้ innerHTML) เพราะชื่อโปรมาจากชีต
+  window.startPromoIntro = function (promos, canOpen) {
+    if (closed) return; // ลูกค้าปิดไปแล้ว ไม่เปิดซ้ำ
+    const next = (promos || []).filter(function (p) { return p.image; }).map(function (p) {
+      return { src: p.image, alt: p.title || tr('โปรโมชั่น', 'Promotion'), caption: p.title || '' };
     });
-    // โหลดรายชื่อไม่ได้หรือไม่มีหนัง ปิดหน้าแนะนำไปเลย (หน้าหลักจะแสดงข้อความแจ้ง)
-    if (!slides.length) { closeIntro(); return; }
+    const open = window.isMovieIntroOpen();
+    // ไม่มีโปรที่เปิดอยู่ = ไม่ขึ้นหน้าต่าง (ผู้ใช้เลือก) ถ้าเปิดจากรายการที่จำไว้แล้วโปรถูกปิดไป ก็ปิดหน้าต่าง
+    if (!next.length) { if (open) closeIntro(); return; }
+    if (!open && !canOpen) return;
+    const key = JSON.stringify(next);
+    if (open && key === slidesKey) return; // รายการเดิม ไม่ต้องสร้างใหม่ (สไลด์จะได้ไม่กระตุกกลับรูปแรก)
+    slides = next;
+    slidesKey = key;
+    intro.classList.toggle('single', slides.length < 2);
+    if (!open) {
+      intro.classList.remove('intro-hidden');
+      document.body.style.overflow = 'hidden';
+      // ให้ปุ่มย้อนกลับของเครื่องปิดหน้าต่างนี้ก่อน (ถ้าสคริปต์หลักพร้อมแล้ว ไม่งั้น navInit ทำให้เอง)
+      if (window.navIntroOpened) window.navIntroOpened();
+    }
     thumbsWrap.innerHTML = '';
     thumbs = slides.map(function (slide, i) {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'intro-thumb';
-      button.setAttribute('aria-label', tr('เลือก ', 'Select ') + slide.alt);
+      button.setAttribute('aria-label', tr('ดู ', 'View ') + slide.alt);
       const img = document.createElement('img');
       img.referrerPolicy = 'no-referrer'; // ตั้งก่อนใส่ src (ดูเหตุผลที่ introPoster)
       img.addEventListener('error', function () { posterFallback(img); });
@@ -961,13 +989,11 @@ function posterFallback(img) {
 
   document.addEventListener('keydown', handleKeydown);
 
-  document.body.style.overflow = 'hidden';
-
-  // ปกเรื่องไหนโหลดไม่ขึ้น ข้ามไปเรื่องถัดไป (สไลด์ยังเดินต่อ)
+  // รูปไหนโหลดไม่ขึ้น บอกใต้รูป (สไลด์ยังเดินต่อ)
   poster.addEventListener('error', function () {
-    if (!slides.length || posterFallback(poster)) return;
+    if (!slides.length) return;
     poster.style.opacity = '1';
-    caption.textContent = slides[current].caption + tr(' (โหลดรูปปกไม่สำเร็จ)', ' (poster unavailable)');
+    caption.textContent = (slides[current].caption ? slides[current].caption + ' ' : '') + tr('(โหลดรูปไม่สำเร็จ)', '(image unavailable)');
   });
 })();
 </script>
@@ -1173,6 +1199,12 @@ function posterFallback(img) {
 
         <!-- STEP 3: CUSTOMER FORM & PAYMENT -->
         <section id="step-3" class="hidden space-y-8">
+            <!-- ปุ่มย้อนกลับด้านบน: ลูกค้าเห็นทันทีที่เข้าขั้นนี้ ไม่ต้องเลื่อนลงไปล่างสุด (ผู้ใช้ขอ 20 พ.ย. 2569) -->
+            <div class="-mb-2">
+                <button type="button" onclick="goToStep(2)" class="bg-[#d4af37] hover:bg-[#e5c04b] text-black font-bold text-base px-5 py-3.5 rounded-xl border-2 border-[#f1d77a] shadow-lg shadow-black/40 transition inline-flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-left"></i> <span class="th">ย้อนกลับ</span><span class="en" lang="en">Back</span>
+                </button>
+            </div>
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 
                 <!-- Left Column: User Information & Payment Upload -->
@@ -1277,6 +1309,17 @@ function posterFallback(img) {
                             </div>
                         </div>
 
+                        <!-- รับทราบเงื่อนไข: ซื้อแล้วเปลี่ยนรอบไม่ได้ (ผู้ใช้ขอ 20 พ.ย. 2569) ต้องติ๊กก่อนยืนยันการจอง แบบเดียวกับ PDPA -->
+                        <div id="noChangeBox" class="bg-zinc-900/90 p-4 rounded-xl border border-zinc-800 transition">
+                            <label class="flex items-start gap-3 cursor-pointer">
+                                <input type="checkbox" id="noChangeConsent" required class="mt-0.5 w-5 h-5 shrink-0 accent-[#8b1528] cursor-pointer">
+                                <span class="text-xs text-zinc-300 leading-relaxed">
+                                    <span class="th">ข้าพเจ้ารับทราบว่า <b class="text-white">เมื่อซื้อตั๋วแล้ว ไม่สามารถเปลี่ยนรอบฉายได้</b> กรุณาตรวจสอบวันและรอบฉายให้ถูกต้องก่อนยืนยันการจอง</span>
+                                    <span class="en" lang="en">I understand that <b class="text-white">once purchased, tickets cannot be changed to another showtime.</b> Please check the date and showtime before booking.</span>
+                                </span>
+                            </label>
+                        </div>
+
                         <!-- ยินยอม PDPA (ต้องติ๊กก่อนยืนยันการจอง) ข้อความเดียวกับคอนเสิร์ต ปรับให้เข้ากับโรงหนัง -->
                         <div id="pdpaBox" class="bg-zinc-900/90 p-4 rounded-xl border border-zinc-800 transition">
                             <label class="flex items-start gap-3 cursor-pointer">
@@ -1292,10 +1335,12 @@ function posterFallback(img) {
                             </label>
                         </div>
 
-                        <div class="pt-4 flex items-center justify-between gap-4">
+                        <!-- items-stretch: ปุ่มย้อนกลับสูงเท่าปุ่มจองเสมอ (มือถือปุ่มจองตัดเป็น 2 บรรทัด) -->
+                        <div class="pt-4 flex items-stretch justify-between gap-4">
 
-<button type="button" onclick="goToStep(2)" class="text-sm text-black hover:text-black px-4 py-3 rounded-lg bg-[#d4af37] hover:bg-[#e5c04b] transition">
-    <i class="fa-solid fa-arrow-left mr-1 text-black"></i> <span class="th">ย้อนกลับ</span><span class="en" lang="en">Back</span>
+<!-- ปุ่มย้อนกลับด้านล่าง: ขนาดเท่าปุ่มบนและสูงเท่าปุ่มจอง เห็นชัดเท่ากัน (เดิมตัวเล็ก text-sm) -->
+<button type="button" onclick="goToStep(2)" class="bg-[#d4af37] hover:bg-[#e5c04b] text-black font-bold text-base px-5 py-3.5 rounded-xl border-2 border-[#f1d77a] shadow-lg shadow-black/40 transition inline-flex items-center justify-center gap-2 shrink-0">
+    <i class="fa-solid fa-arrow-left"></i> <span class="th">ย้อนกลับ</span><span class="en" lang="en">Back</span>
 </button>
 
                             <button type="submit" id="btn-submit-booking" class="flex-1 bg-brand-red hover:bg-brand-redHover text-white font-bold py-3.5 px-6 rounded-xl transition shadow-lg border border-brand-gold/40 flex items-center justify-center">
@@ -1328,7 +1373,7 @@ function posterFallback(img) {
                             <div class="border-t border-b border-zinc-800 py-4 space-y-2 text-sm">
                                 <div class="flex justify-between">
                                     <span class="text-brand-lightGray"><span class="th">โรงภาพยนตร์:</span><span class="en" lang="en">Theatre:</span></span>
-                                    <span class="text-white font-medium">MAHAMIT THEATRE</span>
+                                    <span class="text-white font-medium">MAHAMIT THEATRE (Hall 1)</span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-brand-lightGray"><span class="th">วันที่ฉาย:</span><span class="en" lang="en">Date:</span></span>
@@ -1394,7 +1439,10 @@ function posterFallback(img) {
                     MAHAMIT THEATRE
                 </div>
                 <div style="font-size:14px;margin-top:4px;">
-                    <span class="th">ใบจองตั๋วภาพยนตร์ (รอตรวจสอบการชำระเงิน) · ยังไม่ใช่บัตรเข้าชม</span><span class="en" lang="en">Booking (payment pending) · Not an admission ticket</span>
+                    <!-- data-st: ข้อความตามสถานะการจอง (setBookingState) confirmed = ยืนยันทันที (Code.gs ใหม่) / pending = Code.gs เก่าที่ยังรอแอดมิน / unknown = อ่านผลจาก Apps Script ไม่ได้ -->
+                    <span data-st="confirmed"><span class="th">ใบจองตั๋วภาพยนตร์ (ยืนยันแล้ว) · ใช้ QR ในอีเมลเพื่อเข้าโรง</span><span class="en" lang="en">Booking (confirmed) · Use the QR in your email for admission</span></span>
+                    <span data-st="pending"><span class="th">ใบจองตั๋วภาพยนตร์ (รอตรวจสอบการชำระเงิน) · ยังไม่ใช่บัตรเข้าชม</span><span class="en" lang="en">Booking (payment pending) · Not an admission ticket</span></span>
+                    <span data-st="unknown"><span class="th">ใบจองตั๋วภาพยนตร์ · ใช้ QR ในอีเมลเพื่อเข้าโรง</span><span class="en" lang="en">Booking · Use the QR in your email for admission</span></span>
                 </div>
                 <div style="font-size:12px;margin-top:2px;">
                     <span class="th">พิมพ์เมื่อ</span><span class="en" lang="en">Printed</span> <span id="print-time"></span>
@@ -1532,18 +1580,49 @@ function posterFallback(img) {
                     <i class="fa-solid fa-envelope-circle-check text-3xl text-[#FFD65A] mt-1"></i>
 
                     <div class="min-w-0">
-                        <h4 class="text-[#FFD65A] font-bold text-base sm:text-lg">
-                            <span class="th">รอการตรวจสอบจากแอดมิน</span><span class="en" lang="en">Awaiting payment verification</span>
-                        </h4>
-
-                        <p class="text-zinc-300 text-sm leading-relaxed mt-2">
-                            <span class="th">ระบบได้รับข้อมูลการจองของคุณแล้ว
-                            กรุณารอการตรวจสอบการชำระเงิน
-                            จากนั้นแอดมินจะจัดส่ง QR Code สำหรับเข้าชม
-                            ไปยังอีเมลที่ลงทะเบียนไว้</span>
-                            <span class="en" lang="en">We have received your booking. Once your payment is verified,
-                            your QR admission ticket will be sent to the email below.</span>
-                        </p>
+                        <!-- ยืนยันทันที + ส่ง QR (มหามิตรตัดสินใจ 20 พ.ย. 2569 ไม่ต้องรอแอดมินตรวจสลิป) -->
+                        <div data-st="confirmed">
+                            <h4 class="text-[#FFD65A] font-bold text-base sm:text-lg">
+                                <span class="th">จองสำเร็จ ส่ง QR เข้าชมให้แล้ว</span><span class="en" lang="en">Booking confirmed — QR tickets sent</span>
+                            </h4>
+                            <p class="text-zinc-300 text-sm leading-relaxed mt-2">
+                                <span class="th">QR Code สำหรับเข้าชมส่งไปที่อีเมลด้านล่างแล้ว (1 QR ต่อ 1 ที่นั่ง)
+                                แสดง QR ที่หน้าโรงได้เลย หรือกดปุ่ม "เปิดบัตรเข้าชม" ด้านล่าง</span>
+                                <span class="en" lang="en">Your QR admission tickets have been sent to the email below (1 QR per seat).
+                                Show them at the entrance, or tap "Open tickets" below.</span>
+                            </p>
+                            <!-- ส่งอีเมลไม่สำเร็จ (เช่น โควตาอีเมลวันนั้นหมด): ให้เปิดบัตรจากปุ่มแล้วเก็บไว้ -->
+                            <p id="email-failed-note" class="hidden text-[#ff9b9b] text-sm leading-relaxed mt-2 font-bold">
+                                <span class="th">ระบบส่งอีเมลไม่สำเร็จ กรุณากด "เปิดบัตรเข้าชม" แล้วแคปหน้าจอเก็บไว้</span>
+                                <span class="en" lang="en">We could not send the email. Please tap "Open tickets" and take a screenshot.</span>
+                            </p>
+                        </div>
+                        <!-- Apps Script รุ่นเก่า (ยังรอแอดมินตรวจ) -->
+                        <div data-st="pending">
+                            <h4 class="text-[#FFD65A] font-bold text-base sm:text-lg">
+                                <span class="th">รอการตรวจสอบจากแอดมิน</span><span class="en" lang="en">Awaiting payment verification</span>
+                            </h4>
+                            <p class="text-zinc-300 text-sm leading-relaxed mt-2">
+                                <span class="th">ระบบได้รับข้อมูลการจองของคุณแล้ว
+                                กรุณารอการตรวจสอบการชำระเงิน
+                                จากนั้นแอดมินจะจัดส่ง QR Code สำหรับเข้าชม
+                                ไปยังอีเมลที่ลงทะเบียนไว้</span>
+                                <span class="en" lang="en">We have received your booking. Once your payment is verified,
+                                your QR admission ticket will be sent to the email below.</span>
+                            </p>
+                        </div>
+                        <!-- อ่านผลจาก Apps Script ไม่ได้ (เน็ตหลุดตอนรอ) แต่ตรวจแล้วว่าบันทึกสำเร็จ -->
+                        <div data-st="unknown">
+                            <h4 class="text-[#FFD65A] font-bold text-base sm:text-lg">
+                                <span class="th">จองสำเร็จ</span><span class="en" lang="en">Booking received</span>
+                            </h4>
+                            <p class="text-zinc-300 text-sm leading-relaxed mt-2">
+                                <span class="th">ระบบได้รับการจองของคุณแล้ว QR Code สำหรับเข้าชมจะส่งไปที่อีเมลด้านล่าง
+                                (ถ้าไม่เห็น กรุณาดูในจดหมายขยะ)</span>
+                                <span class="en" lang="en">We have received your booking. Your QR admission tickets will be sent to the email below
+                                (please also check your spam folder).</span>
+                            </p>
+                        </div>
 
                         <p class="text-white text-sm mt-3 break-all">
                             <i class="fa-solid fa-envelope text-[#D4AF37] mr-2"></i>
@@ -1552,6 +1631,14 @@ function posterFallback(img) {
                     </div>
                 </div>
             </div>
+
+            <!-- ปุ่มเปิดบัตร (หน้า ticket.html มี QR ทุกที่นั่ง) ลูกค้าไม่ต้องรออีเมล ลิงก์มาจาก Code.gs ตอนจองสำเร็จ -->
+            <a id="btn-open-ticket" href="#" target="_blank" rel="noopener"
+               class="hidden print-hide mb-3 flex items-center justify-center gap-3 px-5 py-4 rounded-xl font-bold text-black text-lg transition"
+               style="background:linear-gradient(135deg,#F3D27A,#D4AF37);border:2px solid #FFE38A;box-shadow:0 6px 18px rgba(212,175,55,.3);">
+                <i class="fa-solid fa-qrcode text-2xl"></i>
+                <span><span class="th">เปิดบัตรเข้าชม (QR)</span><span class="en" lang="en">Open tickets (QR)</span></span>
+            </a>
 
             <!-- ACTION BUTTONS -->
             <div class="print-hide grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1606,7 +1693,7 @@ function posterFallback(img) {
         </p>
 
         <p class="mt-0 text-[10px] text-brand-cream/40 tracking-wide leading-tight">
-            Website Design & Development by
+            Design & Development by
             <span class="text-brand-gold/70 font-medium">Gototarget Co., Ltd.</span>
         </p>
 
@@ -1661,6 +1748,7 @@ function posterFallback(img) {
         window.onload = function() {
             loadMovies();
             loadSchedule();
+            fetchPromos(); // รูปโปรล่าสุด (หน้าต่างต้อนรับ) โหลดพร้อมรายชื่อหนัง
             renderHomeDates();
             // โหลดตารางรอบใหม่ทุก 1 นาทีระหว่างเปิดหน้าแรกหรือขั้นเลือกที่นั่งค้างไว้ (รอบที่เพิ่งเต็มจะขึ้น SOLD OUT)
             // ไม่โหลดตอนสลับไปแอปอื่น (ประหยัดเน็ตและโควตา Apps Script)
@@ -1677,6 +1765,8 @@ function posterFallback(img) {
             });
             document.getElementById('pdpaConsent').addEventListener('change', () =>
                 document.getElementById('pdpaBox').classList.remove('field-invalid'));
+            document.getElementById('noChangeConsent').addEventListener('change', () =>
+                document.getElementById('noChangeBox').classList.remove('field-invalid'));
         };
 
         // ข้อความที่มาจากชีต (แอดมินกรอก) ต้อง escape ก่อนใส่ใน HTML
@@ -1690,6 +1780,8 @@ function posterFallback(img) {
         // ไม่ต้องรอ Apps Script 1–3 วินาที แล้วค่อยอัปเดตตามข้อมูลจริงในชีตเมื่อโหลดเสร็จ
         // ผูกกับ URL ของ Apps Script ด้วย ตอนสลับไปทดสอบกับ Apps Script ตัวอื่น จะได้ไม่เห็นรายชื่อของอีกตัว
         const MOVIE_CACHE_KEY = 'mt_movies|' + GOOGLE_SCRIPT_URL;
+        // 'loading' | 'ok' | 'error' — renderMovies ใช้แยก "กำลังโหลด" / "เชื่อมต่อไม่ได้" / "ไม่มีหนังจริงๆ"
+        let movieLoadState = 'loading';
 
         // ใช้เฉพาะรหัสหนังรูปแบบที่ถูกต้อง (รหัสนี้ไปอยู่ใน onclick) และปกที่เป็นไฟล์ในเว็บหรือ https
         function cleanMovieList(list) {
@@ -1704,11 +1796,14 @@ function posterFallback(img) {
             MOVIES_DATA = list;
             renderHomeDates(); // จำนวนเรื่องที่ฉายแต่ละวันนับจากรายชื่อหนังชุดนี้
             renderMovies();
-            if (window.startMovieIntro) window.startMovieIntro(MOVIES_DATA);
+        }
+
+        function retryLoadAll() {
+            loadMovies();
+            loadSchedule();
         }
 
         async function loadMovies() {
-            const container = document.getElementById('movie-grid');
             let cachedJson = '';
             try { cachedJson = localStorage.getItem(MOVIE_CACHE_KEY) || ''; } catch (e) {}
             let cached = [];
@@ -1716,7 +1811,8 @@ function posterFallback(img) {
             if (cached.length) {
                 showMovies(cached);
             } else {
-                container.innerHTML = '<p class="col-span-full text-center text-sm text-zinc-400 py-16">' + L('กำลังโหลดรายชื่อภาพยนตร์…', 'Loading films…') + '</p>';
+                movieLoadState = 'loading';
+                renderMovies();
             }
             try {
                 const result = await requestJsonp(GOOGLE_SCRIPT_URL + '?action=movies', '__movies_', 15000);
@@ -1725,20 +1821,20 @@ function posterFallback(img) {
                 }
                 const fresh = cleanMovieList(result.movies);
                 const freshJson = JSON.stringify(fresh);
+                const wasError = movieLoadState === 'error';
+                movieLoadState = 'ok';
                 try { localStorage.setItem(MOVIE_CACHE_KEY, freshJson); } catch (e) {}
                 // วาดใหม่เฉพาะเมื่อรายชื่อเปลี่ยน (หน้าแนะนำจะได้ไม่กระตุกกลับไปเรื่องแรก)
                 // และไม่วาดทับถ้าลูกค้ากดเลือกหนังไปแล้ว
-                if (freshJson !== JSON.stringify(cached) && !selectedMovie) showMovies(fresh);
+                if ((wasError || !fresh.length || freshJson !== JSON.stringify(cached)) && !selectedMovie) showMovies(fresh);
                 else MOVIES_DATA = fresh;
             } catch (error) {
                 console.error('Movie list error:', error);
                 // โหลดไม่ได้แต่มีรายชื่อที่จำไว้: ใช้ต่อไปได้ (Apps Script ตรวจหนังที่ปิดฉายซ้ำตอนจองอยู่แล้ว)
                 if (cached.length) return;
                 MOVIES_DATA = [];
-                container.innerHTML = '<div class="col-span-full text-center py-16 space-y-3">'
-                    + '<p class="text-sm text-brand-gold">' + L('โหลดรายชื่อภาพยนตร์ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ต', 'Could not load the films. Please check your internet connection.') + '</p>'
-                    + '<button type="button" onclick="loadMovies()" class="bg-brand-red text-white text-sm font-bold px-5 py-2.5 rounded-lg">' + L('ลองอีกครั้ง', 'Try again') + '</button></div>';
-                if (window.startMovieIntro) window.startMovieIntro([]);
+                movieLoadState = 'error';
+                renderMovies();
             }
         }
 
@@ -1833,7 +1929,7 @@ function posterFallback(img) {
                 console.error('Schedule error:', error);
                 // มีตารางที่จำไว้แล้ว ใช้ต่อไปได้ ถ้ายังไม่มีอะไรเลยแจ้งลูกค้าพร้อมปุ่มลองใหม่
                 if (!scheduleLoaded && !SCHEDULE.length) {
-                    scheduleError = tr('โหลดรอบฉายไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ต', 'Could not load showtimes. Please check your internet connection.');
+                    scheduleError = tr('เชื่อมต่อระบบจองไม่ได้ โหลดรอบฉายไม่สำเร็จ', 'Could not connect to the booking system to load showtimes.');
                     onScheduleChanged();
                 }
             }
@@ -1974,7 +2070,7 @@ function posterFallback(img) {
                 }).join('');
             if (note) {
                 if (scheduleError && !SCHEDULE.length) {
-                    note.innerHTML = `${escapeHtml(scheduleError)} <button type="button" onclick="loadSchedule()" class="underline text-brand-gold ml-1">${L('ลองอีกครั้ง', 'Try again')}</button>`;
+                    note.innerHTML = `${escapeHtml(scheduleError)} <button type="button" onclick="retryLoadAll()" class="underline text-brand-gold ml-1">${L('ลองอีกครั้ง', 'Try again')}</button>`;
                 } else if (homeDate === 'all') {
                     // ข้อความไทย + อังกฤษ 2 บรรทัด (ผู้ใช้ให้มา 10 พ.ย. 2569) เป็นข้อความคงที่ ไม่มีข้อมูลจากชีต จึงใช้ innerHTML ได้
                     // ภาษาอังกฤษแสดงแค่บรรทัดอังกฤษ
@@ -2013,7 +2109,16 @@ function posterFallback(img) {
         function renderMovies() {
             const container = document.getElementById('movie-grid');
             if (!MOVIES_DATA.length) {
-                container.innerHTML = '<p class="col-span-full text-center text-sm text-zinc-400 py-16">' + L('ขณะนี้ยังไม่มีภาพยนตร์เปิดให้จอง', 'No films are open for booking right now.') + '</p>';
+                if (movieLoadState === 'error') {
+                    // บอกตรงๆ ว่าเชื่อมต่อไม่ได้ (เดิมขึ้น "ยังไม่มีภาพยนตร์" คนเข้าใจว่าเว็บเก่าหรือไม่มีหนัง)
+                    container.innerHTML = '<div class="col-span-full text-center py-16 space-y-3">'
+                        + '<p class="text-sm text-brand-gold">' + L('เชื่อมต่อระบบจองไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองอีกครั้ง', 'Could not connect to the booking system. Please check your internet connection and try again.') + '</p>'
+                        + '<button type="button" onclick="retryLoadAll()" class="bg-brand-red text-white text-sm font-bold px-5 py-2.5 rounded-lg">' + L('ลองอีกครั้ง', 'Try again') + '</button></div>';
+                } else if (movieLoadState === 'loading') {
+                    container.innerHTML = '<p class="col-span-full text-center text-sm text-zinc-400 py-16">' + L('กำลังโหลดรายชื่อภาพยนตร์…', 'Loading films…') + '</p>';
+                } else {
+                    container.innerHTML = '<p class="col-span-full text-center text-sm text-zinc-400 py-16">' + L('ขณะนี้ยังไม่มีภาพยนตร์เปิดให้จอง', 'No films are open for booking right now.') + '</p>';
+                }
                 return;
             }
             const scheduleReady = scheduleLoaded || SCHEDULE.length > 0;
@@ -2257,16 +2362,20 @@ function posterFallback(img) {
         }
 
         // JSONP is used because Google Apps Script web apps do not reliably provide browser CORS headers.
+        // โหลดแบบไม่ส่งบัญชี Google (crossOrigin = anonymous) เพราะ Chrome ที่ล็อกอิน Google หลายบัญชี
+        // ถูก Google พาไป /macros/u/2/... แล้วขึ้น "Sorry, unable to open the file" หน้าเว็บเลยว่าง
+        // (เจอที่คอมเคาน์เตอร์มหามิตร 17 พ.ย. 2569) ข้อมูลที่ดึงเป็นข้อมูลสาธารณะ ไม่ต้องใช้บัญชี
+        // ถ้าโหลดแบบนี้ไม่ได้ (เช่น Google เลิกส่งหัว CORS) ลองแบบเดิมอีกครั้งให้เอง
         function requestJsonp(url, callbackPrefix, timeoutMs = 8000) {
             return new Promise((resolve, reject) => {
                 const callbackName = callbackPrefix + Date.now() + '_' + Math.random().toString(36).slice(2);
-                const script = document.createElement('script');
+                let script = null;
                 let finished = false;
                 const timeout = setTimeout(() => finish(new Error(tr('เชื่อมต่อ Google Sheets ไม่สำเร็จ กรุณาลองใหม่', 'Could not connect to the booking system. Please try again.'))), timeoutMs);
                 function cleanup() {
                     clearTimeout(timeout);
                     try { delete window[callbackName]; } catch (e) { window[callbackName] = undefined; }
-                    if (script.parentNode) script.parentNode.removeChild(script);
+                    if (script && script.parentNode) script.parentNode.removeChild(script);
                 }
                 function finish(error, result) {
                     if (finished) return;
@@ -2275,11 +2384,22 @@ function posterFallback(img) {
                     if (error) reject(error); else resolve(result);
                 }
                 window[callbackName] = result => finish(null, result);
-                script.onerror = () => finish(new Error(tr('เปิด Google Apps Script ไม่ได้', 'Could not reach the booking system.')));
                 const separator = url.includes('?') ? '&' : '?';
                 // lang: Apps Script ตอบข้อความ (เช่น โค้ดส่วนลดใช้ไม่ได้) เป็นภาษาเดียวกับหน้าเว็บ
-                script.src = url + separator + 'callback=' + encodeURIComponent(callbackName) + '&lang=' + currentLang() + '&_=' + Date.now();
-                document.head.appendChild(script);
+                const src = url + separator + 'callback=' + encodeURIComponent(callbackName) + '&lang=' + currentLang() + '&_=' + Date.now();
+                function load(anonymous) {
+                    if (script && script.parentNode) script.parentNode.removeChild(script);
+                    script = document.createElement('script');
+                    if (anonymous) script.crossOrigin = 'anonymous';
+                    script.onerror = () => {
+                        if (finished) return;
+                        if (anonymous) load(false);
+                        else finish(new Error(tr('เปิด Google Apps Script ไม่ได้', 'Could not reach the booking system.')));
+                    };
+                    script.src = src;
+                    document.head.appendChild(script);
+                }
+                load(true);
             });
         }
 
@@ -2551,7 +2671,9 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
          * Step Control & Navigation
          * ---------------------------------------------------- */
         function goToStep(step) {
+            const prevStep = currentStep;
             currentStep = step;
+            navRecord(step, prevStep);
             
             // Toggle visibility of step sections
             document.getElementById('step-1').classList.toggle('hidden', step !== 1);
@@ -2629,12 +2751,217 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
         }
 
         function resetToHome() {
+            const prevStep = currentStep;
             selectedMovie = null;
             selectedSeats = [];
             currentStep = 1;
             clearBookingForm();
             goToStep(1);
+            // currentStep ถูกตั้งเป็น 1 ก่อนเรียก goToStep ประวัติจึงยังไม่ถอย ต้องสั่งเองจากขั้นเดิม
+            navRecord(1, prevStep);
         }
+
+        /* ----------------------------------------------------
+         * ปุ่มย้อนกลับของเบราว์เซอร์/มือถือ (ผู้ใช้ขอ 20 พ.ย. 2569)
+         * ทั้งระบบจองเป็นหน้าเดียว เดิมกดย้อนกลับของเครื่องแล้วออกจากเว็บเลย
+         * → ทุกครั้งที่ไปขั้นถัดไป บันทึกขั้นลงประวัติของเบราว์เซอร์ (history.pushState) ลิงก์ไม่เปลี่ยน
+         *   กดย้อนกลับ = กลับขั้นก่อนหน้า (ชำระเงิน → เลือกที่นั่ง → หน้าแรก → ออกจากเว็บ)
+         * • หน้าจองสำเร็จ: ย้อนกลับ = หน้าแรก (ไม่กลับไปหน้าชำระเงิน กันจองซ้ำ)
+         * • มีหน้าต่างเปิดทับ (แจ้งเตือน นโยบาย QR รูปเต็มจอ โปสเตอร์): ย้อนกลับ = ปิดหน้าต่างนั้นก่อน ไม่เปลี่ยนขั้น
+         * • กำลังส่งการจอง: ย้อนกลับไม่ทำอะไร (การจองต้องไม่หลุดกลางทาง)
+         * ปุ่ม "ย้อนกลับ" ในหน้าใช้ประวัติชุดเดียวกัน (history.go) กดสลับกันได้ไม่ค้างขั้นซ้ำ
+         * ---------------------------------------------------- */
+        let navPos = 0;            // ตำแหน่งในประวัติของรายการปัจจุบัน
+        const navStepPos = {};     // ขั้นที่ 1–3 อยู่ตำแหน่งไหนในประวัติ (ใช้ย้อนด้วยปุ่มในหน้า)
+        let navIgnorePop = 0;      // history.go ที่เราสั่งเอง ไม่ต้องจัดการซ้ำตอน popstate
+        let navSilent = false;     // เปลี่ยนขั้นตามประวัติ (ไม่บันทึกประวัติเพิ่ม)
+        let navGuard = false;      // มีรายการกันไว้ให้หน้าต่างโปสเตอร์ (กดย้อนแล้วปิดหน้าต่าง ไม่ออกจากเว็บ)
+        const navState = (step, pos, extra) => Object.assign({ mt: 1, mtStep: step, pos: pos }, extra || {});
+
+        // เรียกจาก goToStep ทุกครั้ง
+        function navRecord(step, prevStep) {
+            if (navSilent || step === prevStep) return;
+            try {
+                if (step === 4) {
+                    // แทนที่รายการหน้าชำระเงิน: ย้อนจากหน้าจองสำเร็จจะไม่เจอหน้าชำระเงินอีก
+                    history.replaceState(navState(4, navPos), '');
+                    return;
+                }
+                if (step > prevStep) {
+                    navPos++;
+                    navStepPos[step] = navPos;
+                    history.pushState(navState(step, navPos), '');
+                    return;
+                }
+                // ถอยด้วยปุ่มในหน้า (ย้อนกลับ / เปลี่ยนเรื่อง / โลโก้ / กลับหน้าแรก / ที่นั่งถูกจองตัดหน้า)
+                const target = navStepPos[step];
+                if (target != null && target < navPos) {
+                    navIgnorePop++;
+                    const delta = target - navPos;
+                    navPos = target;
+                    history.go(delta);
+                } else {
+                    history.replaceState(navState(step, navPos), '');
+                }
+            } catch (e) { /* เบราว์เซอร์ที่ใช้ประวัติไม่ได้: ยังใช้ปุ่มในหน้าได้ตามปกติ */ }
+        }
+
+        // ปิดหน้าต่างที่อยู่บนสุด คืน true ถ้ามีหน้าต่างให้ปิด
+        function navCloseOverlay() {
+            const previews = document.querySelectorAll('[data-back-close]');
+            if (previews.length) { const top = previews[previews.length - 1]; const btn = top.querySelector('button'); if (btn) btn.click(); else top.remove(); return true; }
+            const alertBox = document.getElementById('customAlertModal');
+            if (alertBox && alertBox.classList.contains('show') && window.closeCustomAlert) { closeCustomAlert(); return true; }
+            const privacy = document.getElementById('privacyModal');
+            if (privacy && !privacy.classList.contains('hidden')) { closePrivacyModal(); return true; }
+            const qr = document.getElementById('qr-modal');
+            if (qr && !qr.classList.contains('hidden')) { closeQRModal(); return true; }
+            return false;
+        }
+
+        function navBookingInFlight() {
+            const m = document.getElementById('bookingLoadingModal');
+            return !!(m && m.classList.contains('is-visible'));
+        }
+
+        window.addEventListener('popstate', event => {
+            if (navIgnorePop > 0) { navIgnorePop--; return; }
+            const st = event.state && event.state.mt ? event.state : navState(1, 0);
+            const stay = () => { try { history.pushState(navState(currentStep, navPos), ''); } catch (e) {} };
+
+            // ระหว่างส่งการจอง: อยู่ที่เดิม
+            if (navBookingInFlight()) {
+                stay();
+                return;
+            }
+            // หน้าต่างโปสเตอร์ (หน้าแรก): ย้อนกลับ = ปิดหน้าต่าง ตอนนี้อยู่รายการหน้าแรกแล้ว
+            if (window.isMovieIntroOpen && window.isMovieIntroOpen()) {
+                navGuard = false;
+                navPos = st.pos;
+                navStepPos[1] = st.pos;
+                window.closeMovieIntro();
+                return;
+            }
+            // หน้าต่างอื่น: ปิดหน้าต่าง แล้วใส่รายการคืน (ยังอยู่ขั้นเดิม)
+            if (navCloseOverlay()) {
+                stay();
+                return;
+            }
+
+            navPos = st.pos;
+            navSilent = true;
+            try {
+                // ออกจากหน้าจองสำเร็จ (ย้อนหรือไปข้างหน้า): เริ่มใหม่ที่หน้าแรก
+                if (currentStep === 4) {
+                    resetToHome();
+                    const home = navStepPos[1];
+                    if (home != null && home !== navPos) { navIgnorePop++; const d = home - navPos; navPos = home; history.go(d); }
+                    else history.replaceState(navState(1, navPos), '');
+                    return;
+                }
+                let target = st.mtStep === 4 ? 1 : st.mtStep;
+                // ไปข้างหน้า (ปุ่ม →) ได้เฉพาะขั้นที่ข้อมูลยังครบ
+                if (target >= 2 && !selectedMovie) target = 1;
+                if (target === 3 && !(selectedDate && selectedTime && selectedSeats.length)) target = 2;
+                if (target === 1 || target === 2 || target === 3) navStepPos[target] = navPos;
+                if (target !== currentStep) {
+                    // ก่อนเปลี่ยนขั้น: ปิดหน้าต่างค้าง (เช่น โปสเตอร์ที่เปิดทับหน้าแรก) ไม่ต้องเหลือไว้
+                    goToStep(target);
+                }
+                if (target !== st.mtStep) history.replaceState(navState(target, navPos), '');
+            } finally {
+                navSilent = false;
+            }
+        });
+
+        // ปิดหน้าต่างโปสเตอร์ด้วยปุ่ม ✕: ถอยรายการที่กันไว้ออก กดย้อนกลับครั้งเดียวก็ออกจากเว็บได้ (ไม่ต้องกด 2 ที)
+        window.navIntroClosed = function () {
+            if (!navGuard) return;
+            navGuard = false;
+            try {
+                if (history.state && history.state.introGuard) {
+                    navIgnorePop++;
+                    navPos--;
+                    navStepPos[1] = navPos;
+                    history.back();
+                }
+            } catch (e) {}
+        };
+
+        // หน้าต่างโปรเปิดทีหลัง (หลังโหลดโปรเสร็จ): เพิ่มรายการกันไว้ กดย้อนกลับแล้วปิดหน้าต่าง ไม่ออกจากเว็บ
+        window.navIntroOpened = function () {
+            if (navGuard) return;
+            try {
+                navPos++;
+                navStepPos[1] = navPos;
+                history.pushState(navState(1, navPos, { introGuard: true }), '');
+                navGuard = true;
+            } catch (e) {}
+        };
+
+        /* ----------------------------------------------------
+         * โปรโมชั่นในหน้าต่างต้อนรับ (20 พ.ย. 2569 เดิมเป็นสไลด์โปสเตอร์หนัง)
+         * จำรายการล่าสุดไว้ในเครื่อง เปิดเว็บครั้งต่อไปหน้าต่างขึ้นทันที (showCachedPromos ตอนสคริปต์เริ่ม)
+         * แล้วโหลดจาก Apps Script ?action=promos ใน window.onload พร้อมรายชื่อหนัง (fetchPromos)
+         * ห้ามยิง JSONP ก่อน window.onload: สคริปต์ที่ยังโหลดไม่เสร็จทำให้ onload รอ รายชื่อหนังจะช้าตามไปด้วย
+         * (ทดสอบแล้วรายชื่อหนังรอโปรจนเสร็จจริง 20 พ.ย. 2569)
+         * ไม่เปิดหน้าต่างถ้าลูกค้าเริ่มใช้งานไปแล้ว (ออกจากหน้าแรก หรือแตะ/เลื่อน/กดปุ่มบนหน้าจอแล้ว)
+         * เพราะหน้าต่างเด้งทับตอนกำลังเลือกหนังจะน่ารำคาญ
+         * (เดิมนับ 10 วินาทีจากเปิดหน้า แต่ Apps Script บางครั้งตอบช้า 5–8 วิ ลูกค้าครั้งแรกเลยไม่เห็นโปร — ผู้ใช้ให้แก้ 20 พ.ย. 2569)
+         * ---------------------------------------------------- */
+        const PROMO_CACHE_KEY = 'mt_promos|' + GOOGLE_SCRIPT_URL;
+        let promoUserActed = false;
+        // นับเฉพาะการกระทำของลูกค้าเอง (ไม่ใช้ scroll เพราะเบราว์เซอร์เลื่อนหน้าเองได้ตอนโหลด/รีเฟรช)
+        ['pointerdown', 'touchstart', 'wheel', 'keydown'].forEach(type => {
+            window.addEventListener(type, () => { promoUserActed = true; }, { capture: true, passive: true, once: true });
+        });
+
+        function cleanPromoList(list) {
+            return (Array.isArray(list) ? list : [])
+                .filter(p => p && /^p[a-z0-9]{1,15}$/.test(String(p.id)) && /^https:\/\//.test(String(p.image || '')))
+                .map(p => ({ id: String(p.id), title: String(p.title || ''), image: String(p.image) }));
+        }
+
+        function promoCanOpen() {
+            return currentStep === 1 && !promoUserActed;
+        }
+
+        function showCachedPromos() {
+            let cached = [];
+            try { cached = cleanPromoList(JSON.parse(localStorage.getItem(PROMO_CACHE_KEY) || '[]')); } catch (e) {}
+            if (cached.length && window.startPromoIntro) window.startPromoIntro(cached, promoCanOpen());
+        }
+
+        async function fetchPromos() {
+            try {
+                const result = await requestJsonp(GOOGLE_SCRIPT_URL + '?action=promos', '__promos_', 15000);
+                if (!result || result.success !== true || !Array.isArray(result.promos)) throw new Error((result && result.message) || 'promos');
+                const fresh = cleanPromoList(result.promos);
+                try { localStorage.setItem(PROMO_CACHE_KEY, JSON.stringify(fresh)); } catch (e) {}
+                if (window.startPromoIntro) window.startPromoIntro(fresh, promoCanOpen());
+            } catch (error) {
+                // โหลดไม่ได้ (เช่น Apps Script ยังเป็นรุ่นเก่าที่ไม่มี action=promos): ใช้รายการที่จำไว้ ไม่มีก็ไม่ขึ้นหน้าต่าง
+                console.warn('Promotions not loaded:', error);
+            }
+        }
+
+        // เริ่มต้น: รายการนี้ = หน้าแรก (เปิดเว็บใหม่/รีเฟรชกลางทางก็เริ่มที่หน้าแรกเสมอ)
+        (function navInit() {
+            try {
+                if (history.state && history.state.mt && typeof history.state.pos === 'number') navPos = history.state.pos;
+                navStepPos[1] = navPos;
+                history.replaceState(navState(1, navPos), '');
+                // หน้าต่างโปรเปิดอยู่แล้ว (จากรายการที่จำไว้): เพิ่มรายการกันไว้ 1 รายการ กดย้อนกลับแล้วปิดหน้าต่าง ไม่ออกจากเว็บ
+                if (window.isMovieIntroOpen && window.isMovieIntroOpen() && !navGuard) {
+                    navPos++;
+                    navStepPos[1] = navPos;
+                    history.pushState(navState(1, navPos, { introGuard: true }), '');
+                    navGuard = true;
+                }
+            } catch (e) {}
+        })();
+        // แสดงโปรที่จำไว้หลัง navInit: หน้าต่างที่เปิดจะได้เพิ่มรายการกันปุ่มย้อนกลับต่อจากรายการหน้าแรกที่ตั้งไว้แล้ว
+        showCachedPromos();
 
         /* ----------------------------------------------------
          * บันทึกใบจองเป็นรูปภาพ (แทนปุ่มพิมพ์/PDF เดิม)
@@ -2664,7 +2991,8 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
         };
         const BOOKING_ICONS = {
             ticket: '', user: '', calendar: '', clock: '', couch: '',
-            money: '', hourglass: '', info: '', film: ''
+            money: '', hourglass: '', info: '', film: '',
+            check: '' // circle-check (ป้าย "ยืนยันแล้ว" บนรูปใบจอง)
         };
 
         // โหลดปกหนังมาวาดในรูป ถ้าปกมาจากเว็บอื่นที่ไม่อนุญาต (เช่นบางไฟล์ใน Google Drive)
@@ -2805,14 +3133,18 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
             ops.push({ t: 'text', text: subText, x: (W - spacedTextWidth(ctx, subText, 4)) / 2, y, lh: 17, font: subFont, color: C.gray, align: 'left', spacing: 4 });
             y += 17 + 18;
 
-            // ป้าย "ใบจอง · รอตรวจสอบการชำระเงิน"
-            const pillText = T('ใบจอง · รอตรวจสอบการชำระเงิน', 'Booking · Payment pending');
+            // ป้ายสถานะ: ยืนยันแล้ว (ส่ง QR ทันที) / รอตรวจสอบ (Apps Script รุ่นเก่า) / ใบจอง (อ่านผลไม่ได้)
+            const state = b.state || 'pending';
+            const pillText = state === 'confirmed' ? T('ใบจอง · ยืนยันแล้ว', 'Booking · Confirmed')
+                : state === 'pending' ? T('ใบจอง · รอตรวจสอบการชำระเงิน', 'Booking · Payment pending')
+                : T('ใบจองตั๋วภาพยนตร์', 'Booking');
+            const pillIcon = state === 'confirmed' ? BOOKING_ICONS.check : BOOKING_ICONS.hourglass;
             const pillFont = font(600, 15);
-            const iconW = hasIcons ? measure(BOOKING_ICONS.hourglass, iconFont(15)) + 6 : 0;
+            const iconW = hasIcons ? measure(pillIcon, iconFont(15)) + 6 : 0;
             const pillW = Math.min(contentW, 1 + 18 + iconW + measure(pillText, pillFont) + 18 + 1);
             const pillH = 39, pillX = (W - pillW) / 2;
             ops.push({ t: 'rect', x: pillX, y, w: pillW, h: pillH, r: pillH / 2, fill: 'rgba(212,175,55,.12)', stroke: C.gold, lineWidth: 1 });
-            if (hasIcons) ops.push({ t: 'text', text: BOOKING_ICONS.hourglass, x: pillX + 19, y, lh: pillH, font: iconFont(15), color: C.light, align: 'left' });
+            if (hasIcons) ops.push({ t: 'text', text: pillIcon, x: pillX + 19, y, lh: pillH, font: iconFont(15), color: C.light, align: 'left' });
             ops.push({ t: 'text', text: pillText, x: pillX + 19 + iconW, y, lh: pillH, font: pillFont, color: C.light, align: 'left' });
             y += pillH + 24;
 
@@ -2904,9 +3236,18 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
             const noteTextW = boxX + boxW - 1 - 16 - noteTextX;
             y += 1 + 14;
             icon('info', boxX + 1 + 16 + 10, y + 3, 20, 20, C.light);
-            y += textBlock(T('ใบจองนี้ยังไม่ใช่บัตรเข้าชม', 'This is not an admission ticket'), noteTextX, y, noteTextW, font(700, 14), C.light, 24).length * 24;
-            y += textBlock(T('QR Code เข้าชมจะส่งทางอีเมล', 'Your QR admission ticket will be emailed'), noteTextX, y, noteTextW, font(400, 14), '#e4e4e7', 24).length * 24;
-            y += textBlock(T('หลังแอดมินตรวจสอบการชำระเงินแล้ว', 'once our team has verified your payment.'), noteTextX, y, noteTextW, font(400, 14), '#e4e4e7', 24).length * 24;
+            // ใบจองไม่มี QR จึงใช้สแกนเข้าโรงไม่ได้ทุกกรณี บอกให้ใช้ QR ในอีเมล (ยืนยันแล้ว = ส่งไปแล้ว)
+            const noteLines = state === 'pending'
+                ? [T('ใบจองนี้ยังไม่ใช่บัตรเข้าชม', 'This is not an admission ticket'),
+                   T('QR Code เข้าชมจะส่งทางอีเมล', 'Your QR admission ticket will be emailed'),
+                   T('หลังแอดมินตรวจสอบการชำระเงินแล้ว', 'once our team has verified your payment.')]
+                : [T('ใช้ QR Code ในอีเมลเพื่อเข้าโรง', 'Use the QR codes in your email for admission'),
+                   state === 'confirmed' ? T('ส่ง QR ไปที่อีเมลแล้ว (1 QR ต่อ 1 ที่นั่ง)', 'Sent to your email (1 QR per seat).')
+                       : T('QR จะส่งไปที่อีเมล (1 QR ต่อ 1 ที่นั่ง)', 'They will be sent to your email (1 QR per seat).'),
+                   T('ใบจองนี้ใช้สแกนเข้าโรงไม่ได้', 'This booking image cannot be scanned for entry.')];
+            y += textBlock(noteLines[0], noteTextX, y, noteTextW, font(700, 14), C.light, 24).length * 24;
+            y += textBlock(noteLines[1], noteTextX, y, noteTextW, font(400, 14), '#e4e4e7', 24).length * 24;
+            y += textBlock(noteLines[2], noteTextX, y, noteTextW, font(400, 14), '#e4e4e7', 24).length * 24;
             y += 14 + 1;
             ops.splice(noteOpIndex, 0, { t: 'rect', x: boxX, y: noteTop, w: boxW, h: y - noteTop, r: 14, fill: 'rgba(139,21,40,.25)', stroke: 'rgba(212,175,55,.45)', lineWidth: 1 });
 
@@ -3175,6 +3516,7 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
                 <img src="${url}" alt="${alt}" style="max-width:100%;max-height:78vh;border-radius:16px;${imgStyle || ''}">
                 <button type="button" style="background:#8b1528;color:#fff;border:1px solid #D4AF37;border-radius:12px;padding:10px 28px;font-weight:700;">${tr('ปิด', 'Close')}</button>`;
             overlay.querySelector('button').onclick = () => { overlay.remove(); URL.revokeObjectURL(url); };
+            overlay.dataset.backClose = '1'; // ปุ่มย้อนกลับของเครื่องปิดหน้านี้ (navCloseOverlay)
             document.body.appendChild(overlay);
         }
 
@@ -3191,6 +3533,7 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
             });
             document.querySelectorAll('.field-invalid').forEach(el => el.classList.remove('field-invalid'));
             document.getElementById('pdpaConsent').checked = false;
+            document.getElementById('noChangeConsent').checked = false;
             appliedDiscount = null;
             showDiscountMessage('', '');
             renderDiscountControls();
@@ -3277,34 +3620,21 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
             });
         }
 
+        // หน้าจองสำเร็จ: แสดงข้อความตามสถานะ (ดู data-st ใน #step-4) ปุ่มเปิดบัตร และคำเตือนเมื่อส่งอีเมลไม่สำเร็จ
+        function setBookingState(state, ticketUrl, emailSent) {
+            document.querySelectorAll('#step-4 [data-st]').forEach(el => { el.hidden = el.dataset.st !== state; });
+            const btn = document.getElementById('btn-open-ticket');
+            btn.classList.toggle('hidden', !ticketUrl);
+            btn.href = ticketUrl || '#';
+            document.getElementById('email-failed-note').classList.toggle('hidden', !(state === 'confirmed' && !emailSent));
+        }
+        setBookingState('unknown', '', true); // ค่าตั้งต้นก่อนจองครั้งแรก (ซ่อนข้อความของสถานะอื่น)
+
         // JSONP check for Apps Script. Retries transient timeouts while upload/appendRow finishes.
+        // ใช้ requestJsonp (ไม่ส่งบัญชี Google เหมือนตอนโหลดรายชื่อหนัง) ชื่อ callback ต้องขึ้นต้น __bookingCheck_ (Code.gs ตรวจไว้)
         function checkBookingStatus(bookingId) {
-            return new Promise((resolve, reject) => {
-                const callbackName = '__bookingCheck_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-                const script = document.createElement('script');
-                let finished = false;
-                const timeout = setTimeout(() => finish(new Error('ตรวจสอบ Google Sheet ใช้เวลานานเกินไป')), 7000);
-                function cleanup() {
-                    clearTimeout(timeout);
-                    delete window[callbackName];
-                    if (script.parentNode) script.parentNode.removeChild(script);
-                }
-                function finish(error, result) {
-                    if (finished) return;
-                    finished = true;
-                    cleanup();
-                    if (error) reject(error);
-                    else resolve(result);
-                }
-                window[callbackName] = result => finish(null, result);
-                script.onerror = () => finish(new Error('เปิดจุดตรวจสอบของ Google Apps Script ไม่ได้'));
-                const separator = GOOGLE_SCRIPT_URL.includes('?') ? '&' : '?';
-                script.src = GOOGLE_SCRIPT_URL + separator
-                    + 'action=check&bookingId=' + encodeURIComponent(bookingId)
-                    + '&callback=' + encodeURIComponent(callbackName)
-                    + '&_=' + Date.now();
-                document.head.appendChild(script);
-            });
+            const separator = GOOGLE_SCRIPT_URL.includes('?') ? '&' : '?';
+            return requestJsonp(GOOGLE_SCRIPT_URL + separator + 'action=check&bookingId=' + encodeURIComponent(bookingId), '__bookingCheck_', 7000);
         }
 
         // ใช้เฉพาะเมื่ออ่านผลจากการส่งข้อมูลไม่ได้ (เช่น เน็ตหลุดระหว่างรอ) จึงถาม Google Sheet ว่ามีรายการนี้แล้วหรือยัง
@@ -3359,6 +3689,10 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
                 invalid.push({ id: 'payment-slip', label: tr('สลิปการโอนเงิน', 'Payment slip'), message: tr('กรุณาแนบสลิปการชำระเงินก่อนยืนยันการจอง', 'Please attach your payment slip before booking.') });
             } else if (!(slipFile.type.startsWith('image/') || slipFile.type === 'application/pdf' || slipFile.name.toLowerCase().endsWith('.pdf'))) {
                 invalid.push({ id: 'payment-slip', label: tr('สลิปการโอนเงิน', 'Payment slip'), message: tr('กรุณาแนบไฟล์รูปภาพหรือ PDF เท่านั้น', 'Please attach an image or PDF file only.') });
+            }
+            if (!document.getElementById('noChangeConsent').checked) {
+                invalid.push({ id: 'noChangeBox', label: tr('รับทราบว่าเปลี่ยนรอบไม่ได้', 'No showtime changes'),
+                    message: tr('กรุณาติ๊กรับทราบว่าเมื่อซื้อตั๋วแล้วไม่สามารถเปลี่ยนรอบฉายได้', 'Please tick to confirm you understand tickets cannot be changed to another showtime.') });
             }
             if (!document.getElementById('pdpaConsent').checked) {
                 invalid.push({ id: 'pdpaBox', label: tr('ยอมรับนโยบายความเป็นส่วนตัว', 'Privacy Policy consent'),
@@ -3424,6 +3758,7 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
                     payTime: payTime,
                     timestamp: new Date().toISOString(),
                     pdpaConsent: true,
+                    noChangeConsent: true, // Code.gs บันทึกเวลาที่ยอมรับในคอลัมน์ No-Change Consent
                     lang: currentLang(), // ข้อความตอบกลับเป็นภาษาเดียวกับหน้าเว็บ
                     paymentSlip: paymentSlip
                 };
@@ -3475,6 +3810,15 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
                         'We could not confirm your booking yet. Please check your internet connection and tap Book now again (it will not be booked twice).'));
                 }
 
+                // สถานะที่ Apps Script ตอบมา: ยืนยันแล้ว (ส่ง QR ทันที) / ไม่มี status = Code.gs รุ่นเก่า (รอแอดมิน)
+                // อ่านผลไม่ได้ (ตรวจจากชีตแทน) = unknown
+                const bookingState = !bookingResult ? 'unknown'
+                    : bookingResult.status === 'ยืนยันแล้ว' ? 'confirmed' : 'pending';
+                // ลิงก์บัตรต้องเป็นหน้า ticket.html แบบ https เท่านั้น (กันลิงก์แปลกไปอยู่ในปุ่ม)
+                const ticketUrl = bookingResult && /^https:\/\/[^\s"'<>]+\/ticket\.html#/.test(String(bookingResult.ticketUrl || ''))
+                    ? String(bookingResult.ticketUrl) : '';
+                setBookingState(bookingState, ticketUrl, !bookingResult || bookingResult.emailSent !== false);
+
                 // Refresh the shared seat state after the server confirms the booking row.
                 await loadBookedSeatsForCurrentSlot();
                 loadSchedule(); // ที่นั่งว่างของรอบนี้ลดลง (กลับหน้าแรกจะเห็น SOLD OUT ถ้าเต็ม)
@@ -3506,12 +3850,14 @@ document.getElementById('promptpay-qr').src = './promptpay-qr.png';
                     name: custName,
                     amount: totalPrice,
                     discountCode: discount > 0 ? appliedDiscount.code : '',
-                    discount: discount
+                    discount: discount,
+                    state: bookingState // ป้ายและข้อความในรูปใบจอง
                 };
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalButtonHtml;
                 // จองรายการถัดไปต้องติ๊กยินยอมใหม่ และกรอกโค้ดส่วนลดใหม่
                 document.getElementById('pdpaConsent').checked = false;
+                document.getElementById('noChangeConsent').checked = false;
                 appliedDiscount = null;
                 document.getElementById('discountCodeInput').value = '';
                 showDiscountMessage('', '');
